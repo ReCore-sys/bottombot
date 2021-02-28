@@ -1,0 +1,1 @@
+Ok so just some simple stuff. This is the bare bones of the bot. It does not have the sql database needed for the AI or any of the server database. it' just one file. Also does not have a token so you won't be able to run it.
