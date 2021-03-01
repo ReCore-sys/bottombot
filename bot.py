@@ -112,6 +112,7 @@ async def on_guild_join(guild):
     f.close()
     #endregion
 
+
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
