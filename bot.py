@@ -8,6 +8,7 @@ import async_cse
 import discord
 from async_timeout import timeout
 from discord.ext import commands
+from discord.ext import menus
 import better_profanity
 from translate import Translator
 from chatterbot import ChatBot
@@ -45,7 +46,7 @@ client = commands.Bot(command_prefix = "-")
 
 client.remove_command('help')
 starttime = null
-
+client.load_extension("music")
 
 bannedids = [369234715015905292, 567522840752947210, 459685744387162112, 763336086369861672]
 
@@ -63,6 +64,7 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
+    #.system(f"java -jar {filepath}/Lavalink.jar")
 
 @client.event
 async def on_guild_join(guild): #this is called when the bot joins a new server
@@ -370,6 +372,11 @@ async def help(ctx):
                             -invite : gets a link for the server and an invite link for the bot
                             -servers : Shows how many servers the bot is in
                             -code : gets the link for the github so you can see what goes on under the hood```""")
+
+
+
+
+
 client.run(token)
 
 #To do
