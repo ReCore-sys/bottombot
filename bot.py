@@ -16,37 +16,28 @@ from simpleeval import simple_eval
 import operator
 import ast
 import datetime
-import logging
 
 #pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
-filepath = os.path.abspath(os.path.dirname(__file__))
+filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
 badsearch = ["cock","jizz","cum","dick","ass","shit","penis","fuck","anal","semen","boob","tit","vag","pussy","isis","ISIS","porn","pedo","hentai","r34","sex","nigger","anus"] #more bad words to limit searches, cos I really don't trust people
 f = open(f"{filepath}/config/token.txt")
-token = str(f.readline())
+token = str(f.readline()) #Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
 f.close()
-null = None
+null = None #so I can write "null" instead of "None" and look like hackerman
 
 #Chatterbot stuff
 
 chatbot = ChatBot('Bottombot')
-mathbot = ChatBot('MathBot',
-            logic_adapters=[
-        'chatterbot.logic.MathematicalEvaluation',
-        'chatterbot.logic.UnitConversion'
-    ])
 
 trainer = ListTrainer(chatbot)
 
-trainer.export_for_training('./my_export.json')
+trainer.export_for_training('./my_export.json') #exporting the saved training data
 
 trainer.train([
-    "UwU"
+    "UwU" #It starts with one word. I chose this
 ])
 #Chatterbot stuff
 
-#Maths
-
-#Maths
 
 client = discord.Client()
 
@@ -54,17 +45,6 @@ client = commands.Bot(command_prefix = "-")
 
 client.remove_command('help')
 starttime = null
-log = False
-@client.command()
-async def logging(ctx):
-    if log == False:
-        logging.basicConfig(level=logging.INFO)
-        log = True
-        await ctx.send(f"Logging was set to {log}")
-    else:
-        logging.basicConfig(level=logging.CRITICAL)
-        log = False
-        await ctx.send(f"Logging was set to {log}")
 
 
 
@@ -76,7 +56,7 @@ async def on_ready():
     status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCPC commit horrific crimes"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
-    channel = client.get_channel(806378599065190412)
+    channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
     await channel.send('Bot is up')
     channel = client.get_channel(812145603848568852)
     await channel.send('Bot is up')
@@ -85,29 +65,29 @@ async def on_ready():
     f.close()
 
 @client.event
-async def on_guild_join(guild):
+async def on_guild_join(guild): #this is called when the bot joins a new server
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse !help to find out what commands I can use!')
         break
     print(f"\u001b[35mJoined an new server! {guild.name} : {guild.id}\u001b[31m")
     #region Setup database
-    os.system(f'mkdir ./serversettings/{guild.id}')
+    os.system(f'mkdir ./serversettings/{guild.id}') #Makes a folder under "serversettings" named the server's id
     f = open("logs.txt", "a")
-    f.write(f"{datetime.datetime.now()}: Joined an new server! {guild.name} : {guild.id}\n")
+    f.write(f"{datetime.datetime.now()}: Joined an new server! {guild.name} : {guild.id}\n") #logging that a new server was joined
     f.close()
-    os.system(f"touch ./serversettings/{guild.id}/replay.txt")
-    os.system(f"touch > ./serversettings/{guild.id}/serverdetails.txt")
+    os.system(f"touch ./serversettings/{guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
+    os.system(f"touch > ./serversettings/{guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
     f = open(f"{filepath}/serversettings/{guild.id}/serverdetails.txt", "a")
     f.write(f"Server name: {guild.name}\n")
     f.write(f"Server id: {guild.id}\n")
     f.write(f"Server id: {guild.owner}\n")
     f.write(f"Server id: {guild.description}\n")
-    f.write(f"Joined at {datetime.datetime.now()}")
+    f.write(f"Joined at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
     f.close()
     print(f"\u001b[35mDatabase set up for server {guild.id} ({guild.name})\u001b[31m")
     f = open("logs.txt", "a")
-    f.write(f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n")
+    f.write(f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n") #logging that the database was set up properly
     f.close()
     #endregion
 
@@ -115,7 +95,7 @@ async def on_guild_join(guild):
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
-        os.system(f'IF exist serversettings/{message.guild.id} ELSE mkdir serversettings/{message.guild.id} && echo \u001b[36mserversettings/{message.guild.id} created')
+        os.system(f'IF exist serversettings/{message.guild.id} ELSE mkdir serversettings/{message.guild.id} && echo \u001b[36mserversettings/{message.guild.id} created') #this makes the relevant folders for any servers that don't already have a serversettings entry.
         if message.author != client.user:
             pingC = message.content
             pingU = message.author
@@ -123,7 +103,7 @@ async def on_message(message):
                 f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                 f.write(f"\n'{pingC}' was sent by {pingU}")
                 f.close()
-            except FileNotFoundError:
+            except FileNotFoundError: #if the replay.txt file does not exist, create one then write to it.
                 os.system(f"touch serversettings/{message.guild.id}/replay.txt")
                 f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                 f.write(f"\n'{pingC}' was sent by {pingU}")
@@ -163,7 +143,7 @@ async def on_guild_leave(guild):
     f = open("logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Left a server! {guild.name} : {guild.id}\n")
     print(f"Left a server! {guild.name} : {guild.id}\u001b[31m")
-    f.close()
+    f.close() #this removes all the database stuff for when the bot leaves a server, whether it is kicked or the server is deleted.
 
 @client.command()
 async def invite(ctx):
@@ -212,7 +192,7 @@ async def bb(ctx, *, args):
     if ctx.message.author.id == 763336086369861672:
         await ctx.send("no, fuck off")
     elif ctx.message.author.id == 456028176557015040:
-        await ctx.send("no, fuck off")
+        await ctx.send("no, fuck off") #there are a few people banned from using this command. These are their ids
     else:
         await ctx.trigger_typing()
         response = chatbot.get_response(args)
@@ -230,7 +210,7 @@ async def maths(ctx, *, args):
     if ctx.message.author.id == 763336086369861672:
         await ctx.send("no, fuck off")
     elif ctx.message.author.id == 456028176557015040:
-        await ctx.send("no, fuck off")
+        await ctx.send("no, fuck off") #same people banned as above
     else:
         await ctx.trigger_typing()
         response = simple_eval(args.replace("^", "**"), functions={"sqrt": lambda x: sqrt(x)})
@@ -268,7 +248,7 @@ async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
         exit()
     else:
-        await ctx.send("Lol nah")
+        await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
 
 pingC = None
 pingU = None
@@ -305,7 +285,7 @@ async def search(ctx, *, args):
         await ctx.send("You think I'm stupid? Don't answer that.")
 
     elif ctx.message.author.id == 567522840752947210:
-        ctx.send("Fuck off")
+        ctx.send("Fuck off") #a user banned from the search command cos they tried to search "male docking" 82 times
 
     else :
             client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
