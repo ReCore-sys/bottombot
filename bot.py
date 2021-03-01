@@ -53,7 +53,7 @@ bannedids = [369234715015905292, 567522840752947210, 459685744387162112, 7633360
 @client.event
 async def on_ready():
     activity = discord.Game(name="bottombot", type=3)
-    status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCPC commit horrific crimes"])
+    status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCPC commit horrific crimes","bentosalad on twitch"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
     channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
@@ -191,7 +191,6 @@ async def bb(ctx, *, args):
     else:
         await ctx.trigger_typing()
         response = chatbot.get_response(args)
-
         print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
         await ctx.send(response, tts=ttst)
         f = open(f"{filepath}/logs.txt", "a")
@@ -251,11 +250,11 @@ async def cease(ctx):
 @client.command()
 async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
-        print("\u001b Rebooting \u001b[0m")
+        print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
         exit()
     else:
-        await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
+        await ctx.send("Lol nah") #command to reboot the bot. Only I can use it.
 
 pingC = None
 pingU = None
