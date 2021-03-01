@@ -19,7 +19,7 @@ import datetime
 
 #pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
-badsearch = ["cock","jizz","cum","dick","ass","shit","penis","fuck","anal","semen","boob","tit","vag","pussy","isis","ISIS","porn","pedo","hentai","r34","sex","nigger","anus"] #more bad words to limit searches, cos I really don't trust people
+badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people
 f = open(f"{filepath}/config/token.txt")
 token = str(f.readline()) #Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
 f.close()
@@ -31,7 +31,7 @@ chatbot = ChatBot('Bottombot')
 
 trainer = ListTrainer(chatbot)
 
-trainer.export_for_training('./my_export.json') #exporting the saved training data
+trainer.export_for_training(f'{filepath}/my_export.json') #exporting the saved training data
 
 trainer.train([
     "UwU" #It starts with one word. I chose this
@@ -47,7 +47,7 @@ client.remove_command('help')
 starttime = null
 
 
-
+bannedids = [369234715015905292, 567522840752947210, 459685744387162112, 763336086369861672]
 
 
 @client.event
@@ -60,7 +60,7 @@ async def on_ready():
     await channel.send('Bot is up')
     channel = client.get_channel(812145603848568852)
     await channel.send('Bot is up')
-    f = open("logs.txt", "a")
+    f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
 
@@ -86,7 +86,7 @@ async def on_guild_join(guild): #this is called when the bot joins a new server
     f.write(f"Joined at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
     f.close()
     print(f"\u001b[35mDatabase set up for server {guild.id} ({guild.name})\u001b[31m")
-    f = open("logs.txt", "a")
+    f = open(f"{filepath}/logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n") #logging that the database was set up properly
     f.close()
     #endregion
@@ -115,23 +115,26 @@ async def on_message(message):
 
 @client.command()
 async def rewind(ctx, arg1):
-    try:
-        with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
-            lines = f.read().splitlines()
-            last_line = lines[int(arg1) * -1]
-            print(f"\u001b[33;1mMention: {last_line} was called\u001b[31m")
-            await ctx.send(last_line)
-            f.close()
-            f = open("logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {arg1} was called with the result '{last_line}'\n")
-            f.close()
-    except FileNotFoundError:
-        await ctx.send("No @ mentions have been sent in this server. Please report this if it is an error")
+    if arg1.isnumeric():
+        try:
+            with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
+                lines = f.read().splitlines()
+                last_line = lines[int(arg1) * -1]
+                print(f"\u001b[33;1mMention: {last_line} was called\u001b[31m")
+                await ctx.send(last_line)
+                f.close()
+                f = open(f"{filepath}/logs.txt", "a")
+                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {arg1} was called with the result '{last_line}'\n")
+                f.close()
+        except FileNotFoundError:
+            await ctx.send("No @ mentions have been sent in this server. Please report this if it is an error")
+    else:
+        await ctx.send("I need a number stupid")
 
 @client.event
 async def on_guild_leave(guild):
     os.system(f"rmdir settings/{guild.id}")
-    f = open("logs.txt", "a")
+    f = open(f"{filepath}/logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Left a server! {guild.name} : {guild.id}\n")
     print(f"Left a server! {guild.name} : {guild.id}\u001b[31m")
     f.close() #this removes all the database stuff for when the bot leaves a server, whether it is kicked or the server is deleted.
@@ -162,7 +165,7 @@ async def ru(ctx, *, args):
         translation = tr1.translate(args)
         print(f"\u001b[33;1m{translation}\u001b[31m")
         await ctx.send(translation)
-        f = open("logs.txt", "a")
+        f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !ru {args} -> {translation}\n")
         f.close()
 
@@ -176,21 +179,22 @@ async def tts(ctx, *, args):
         ttst = False
     await ctx.send(f"TTS set to {ttst}")
 
+
+
 canbb = True
 @client.command()
 async def bb(ctx, *, args):
+    noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
     global ttst
-    if ctx.message.author.id == 763336086369861672:
-        await ctx.send("no, fuck off")
-    elif ctx.message.author.id == 456028176557015040:
-        await ctx.send("no, fuck off") #there are a few people banned from using this command. These are their ids
+    if ctx.message.author.id in bannedids:
+        await ctx.send(noresponses)#there are a few people banned from using this command. These are their ids
     else:
         await ctx.trigger_typing()
         response = chatbot.get_response(args)
 
         print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
         await ctx.send(response, tts=ttst)
-        f = open("logs.txt", "a")
+        f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
         f.close()
 
@@ -198,18 +202,21 @@ async def bb(ctx, *, args):
 async def maths(ctx, *, args):
     global ttst
     global s
-    if ctx.message.author.id == 763336086369861672:
-        await ctx.send("no, fuck off")
-    elif ctx.message.author.id == 456028176557015040:
-        await ctx.send("no, fuck off") #same people banned as above
-    else:
-        await ctx.trigger_typing()
-        response = simple_eval(args.replace("^", "**"), functions={"sqrt": lambda x: sqrt(x)})
-        print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
-        await ctx.send(response, tts=ttst)
-        f = open("logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
-        f.close()
+    try:
+        if ctx.message.author.id == 763336086369861672:
+            await ctx.send("no, fuck off")
+        elif ctx.message.author.id == 456028176557015040:
+            await ctx.send("no, fuck off") #same people banned as above
+        else:
+            await ctx.trigger_typing()
+            response = simple_eval(args.replace("^", "**"), functions={"sqrt": lambda x: math.sqrt(x)})
+            print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
+            await ctx.send(response, tts=ttst)
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
+            f.close()
+    except NumberTooHigh:
+        await ctx.send("Result was too high")
 
 @client.command()
 async def ping(ctx):
@@ -237,6 +244,15 @@ async def info(ctx):
 @client.command()
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
+        exit()
+    else:
+        await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
+
+@client.command()
+async def reboot(ctx):
+    if ctx.message.author.id == 451643725475479552:
+        print("\u001b Rebooting \u001b[0m")
+        os.system(f"python {filepath}/bot.py")
         exit()
     else:
         await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
@@ -275,8 +291,9 @@ async def search(ctx, *, args):
     elif "://" in args:
         await ctx.send("You think I'm stupid? Don't answer that.")
 
-    elif ctx.message.author.id == 567522840752947210:
-        ctx.send("Fuck off") #a user banned from the search command cos they tried to search "male docking" 82 times
+    if ctx.message.author.id in bannedids:
+        noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
+        await ctx.send(noresponses) #a user banned from the search command cos they tried to search "male docking" 82 times
 
     else :
             client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
@@ -287,9 +304,9 @@ async def search(ctx, *, args):
             else:
                 await ctx.send(f"**{first_result.title}**\n{first_result.url}")
                 await client.close()
-    f = open("logs.txt", "a")
-    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
-    f.close()
+                f = open(f"{filepath}/logs.txt", "a")
+                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
+                f.close()
 
 @client.command()
 async def image(ctx,*,args):
@@ -300,10 +317,9 @@ async def image(ctx,*,args):
             await ctx.send(badresponse)
             print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
-
-
-    elif ctx.message.author.id == 567522840752947210:
-        ctx.send("Fuck off")
+    elif ctx.message.author.id in bannedids:
+        noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
+        await ctx.send(noresponses)
     else:
         client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
         results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
@@ -313,9 +329,9 @@ async def image(ctx,*,args):
         else:
             await ctx.send(f"{first_result.image_url}")
             await client.close()
-    f = open("logs.txt", "a")
-    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.image_url}\n")
-    f.close()
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.image_url}\n")
+            f.close()
 
 @client.command()
 async def duck(ctx):
@@ -333,7 +349,7 @@ async def bottomgear(ctx):
             output = f"Tonight on bottomgear James {verb1} {noun1}, I {verb2} {noun2} and Hammond {verb3} {noun3} and {consequence}" #this compiles a random choice from each list into one large string. Feel free to add stuff to the list.
             await ctx.send(output, tts=True)
             print("\u001b[33;1mDone: !bottomgear\u001b[31m")
-            f = open("logs.txt", "a")
+            f = open(f"{filepath}/logs.txt", "a")
             f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bottomgear {output}\n")
             f.close()
 
