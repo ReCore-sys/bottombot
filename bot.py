@@ -128,6 +128,12 @@ async def on_message(message):
                 f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                 f.write(f"\n'{pingC}' was sent by {pingU}")
                 f.close()
+    elif message.content == "hello there":
+        channel = message.channel
+        await channel.send('general kenobi')
+    elif message.content == "Hello there":
+        channel = message.channel
+        await channel.send('general kenobi')
     await client.process_commands(message)
 
 @client.command()
