@@ -108,16 +108,7 @@ async def on_message(message):
                 f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                 f.write(f"\n'{pingC}' was sent by {pingU}")
                 f.close()
-    elif message.content == "hello there":
-        channel = message.channel
-        await channel.send('general kenobi')
-    elif message.content == "Hello there":
-        channel = message.channel
-        await channel.send('general kenobi')
-    elif message.content == "hello there.":
-        channel = message.channel
-        await channel.send('general kenobi')
-    elif message.content == "Hello there.":
+    elif message.content.lower == "hello there":
         channel = message.channel
         await channel.send('general kenobi')
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
@@ -162,7 +153,7 @@ async def roll(ctx, arg1):
     if arg1.isnumeric():
         await ctx.send(random.randint(1, int(arg1)))
     else:
-        await ctx.send("I need a number dumbass")
+        await ctx.send("I need a number stupid")
 
 @client.command()
 async def ru(ctx, *, args):
@@ -369,4 +360,4 @@ client.run(token)
 #To do
 #Music stuff. It would be hard but a very good feature.
 #Editable prefixes
-#
+#Maybe premium commands you need to pay for?
