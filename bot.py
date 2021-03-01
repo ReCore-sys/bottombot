@@ -134,7 +134,13 @@ async def on_message(message):
     elif message.content == "Hello there":
         channel = message.channel
         await channel.send('general kenobi')
-    await client.process_commands(message)
+    elif message.content == "hello there.":
+        channel = message.channel
+        await channel.send('general kenobi')
+    elif message.content == "Hello there.":
+        channel = message.channel
+        await channel.send('general kenobi')
+    await client.process_commands(message #this breaks everything if removed. I don't advise it.
 
 @client.command()
 async def rewind(ctx, arg1):
