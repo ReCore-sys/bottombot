@@ -75,7 +75,7 @@ async def on_ready():
     activity = discord.Game(name="bottombot", type=3)
     status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCPC commit horrific crimes"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
-    print("\u001b[35mThe bot is up")
+    print("\u001b[35mThe bot is up\u001b[31m")
     channel = client.get_channel(806378599065190412)
     await channel.send('Bot is up')
     channel = client.get_channel(812145603848568852)
@@ -83,7 +83,6 @@ async def on_ready():
     f = open("logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    print(filepath)
 
 @client.event
 async def on_guild_join(guild):
