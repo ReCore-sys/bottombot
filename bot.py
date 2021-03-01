@@ -165,6 +165,10 @@ async def invite(ctx):
     await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot")
 
 @client.command()
+async def code(ctx):
+    await ctx.send("Feel free to make commits and stuff.\nhttps://github.com/ReCore-sys/bottombot")
+
+@client.command()
 async def servers(ctx):
     await ctx.send(str(len(client.guilds)) + " servers have been infected!")
 
@@ -360,18 +364,19 @@ async def bottomgear(ctx):
 
 @client.command()
 async def help(ctx):
-    await ctx.send("""```!bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
-                            !search [query] : Does a google search for something
-                            !image [image] : Does a google image search for something
-                            !cf : does a coin flip
-                            !ru [words] : will translate something into russian
-                            !info : prints info about the bot
-                            !bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow.
-                            !rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
-                            !duck : duck
-                            !bucketlist : prints a to-do list
-                            !trans : prints out the bot's opinion on trans people
-                            !ping : works out the bot's ping
-                            !invite : gets a link for the server and an invite link for the bot
-                            !servers : Shows how many servers the bot is in```""")
+    await ctx.send("""```-bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
+                            -search [query] : Does a google search for something
+                            -image [image] : Does a google image search for something
+                            -cf : does a coin flip
+                            -ru [words] : will translate something into russian
+                            -info : prints info about the bot
+                            -bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow.
+                            -rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
+                            -duck : duck
+                            -bucketlist : prints a to-do list
+                            -trans : prints out the bot's opinion on trans people
+                            -ping : works out the bot's ping
+                            -invite : gets a link for the server and an invite link for the bot
+                            -servers : Shows how many servers the bot is in
+                            -code : gets the link for the github so you can see what goes on under the hood```""")
 client.run(token)
