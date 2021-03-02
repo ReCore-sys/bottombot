@@ -17,6 +17,7 @@ from simpleeval import simple_eval
 import operator
 import ast
 import datetime
+import botlib
 
 #pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
@@ -46,15 +47,13 @@ client = commands.Bot(command_prefix = "-")
 
 client.remove_command('help')
 starttime = null
-client.load_extension("music")
-
-bannedids = [369234715015905292, 567522840752947210, 459685744387162112, 763336086369861672]
 
 
 @client.event
 async def on_ready():
+    os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
     activity = discord.Game(name="bottombot", type=3)
-    status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCPC commit horrific crimes","bentosalad on twitch"])
+    status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
     channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
@@ -64,7 +63,8 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    #.system(f"java -jar {filepath}/Lavalink.jar")
+    await asyncio.sleep(5)
+    client.load_extension("music")
 
 @client.event
 async def on_guild_join(guild): #this is called when the bot joins a new server
@@ -110,7 +110,7 @@ async def on_message(message):
                 f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                 f.write(f"\n'{pingC}' was sent by {pingU}")
                 f.close()
-    elif message.content.lower == "hello there":
+    elif (message.content).lower == "hello there":
         channel = message.channel
         await channel.send('general kenobi')
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
@@ -186,11 +186,8 @@ async def tts(ctx, *, args):
 canbb = True
 @client.command()
 async def bb(ctx, *, args):
-    noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
     global ttst
-    if ctx.message.author.id in bannedids:
-        await ctx.send(noresponses)#there are a few people banned from using this command. These are their ids
-    else:
+    if botlib.check_banned:
         await ctx.trigger_typing()
         response = chatbot.get_response(args)
         print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
@@ -198,17 +195,15 @@ async def bb(ctx, *, args):
         f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
         f.close()
+    else:
+        await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
 
 @client.command()
 async def maths(ctx, *, args):
     global ttst
     global s
     try:
-        if ctx.message.author.id == 763336086369861672:
-            await ctx.send("no, fuck off")
-        elif ctx.message.author.id == 456028176557015040:
-            await ctx.send("no, fuck off") #same people banned as above
-        else:
+        if botlib.check_banned(ctx):
             await ctx.trigger_typing()
             response = simple_eval(args.replace("^", "**"), functions={"sqrt": lambda x: math.sqrt(x)})
             print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
@@ -216,6 +211,8 @@ async def maths(ctx, *, args):
             f = open(f"{filepath}/logs.txt", "a")
             f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
             f.close()
+        else:
+            await ctx.send(botlib.nope)
     except NumberTooHigh:
         await ctx.send("Result was too high")
 
@@ -245,6 +242,7 @@ async def info(ctx):
 @client.command()
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
+        os.kill("java.exe")
         exit()
     else:
         await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
@@ -254,6 +252,8 @@ async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
         print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
+        os.kill("java.exe")
+        os.kill("cmd.exe")
         exit()
     else:
         await ctx.send("Lol nah") #command to reboot the bot. Only I can use it.
@@ -292,23 +292,20 @@ async def search(ctx, *, args):
     elif "://" in args:
         await ctx.send("You think I'm stupid? Don't answer that.")
 
-    if ctx.message.author.id in bannedids:
-        noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
-        await ctx.send(noresponses) #a user banned from the search command cos they tried to search "male docking" 82 times
-
+    if botlib.check_banned(ctx):
+        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
+        results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
+        first_result = results[0] # Grab the first result
+        if "urbandictionary" in first_result.url:
+            await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+        else:
+            await ctx.send(f"**{first_result.title}**\n{first_result.url}")
+            await client.close()
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
+            f.close()
     else :
-            client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
-            results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
-            first_result = results[0] # Grab the first result
-            if "urbandictionary" in first_result.url:
-                await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
-            else:
-                await ctx.send(f"**{first_result.title}**\n{first_result.url}")
-                await client.close()
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
-                f.close()
-
+        await ctx.send(botlib.nope)
 @client.command()
 async def image(ctx,*,args):
     isbad2 = better_profanity.profanity.contains_profanity(args)
@@ -318,10 +315,7 @@ async def image(ctx,*,args):
             await ctx.send(badresponse)
             print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
-    elif ctx.message.author.id in bannedids:
-        noresponses = random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no"])
-        await ctx.send(noresponses)
-    else:
+    elif botlib.check_banned(ctx):
         client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
         results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
         first_result = results[0] # Grab the first result
@@ -333,6 +327,9 @@ async def image(ctx,*,args):
             f = open(f"{filepath}/logs.txt", "a")
             f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.image_url}\n")
             f.close()
+
+    else:
+        await ctx.send(botlib.nope)
 
 @client.command()
 async def duck(ctx):
@@ -358,20 +355,29 @@ async def bottomgear(ctx):
 @client.command()
 async def help(ctx):
     await ctx.send("""```-bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
-                            -search [query] : Does a google search for something
-                            -image [image] : Does a google image search for something
-                            -cf : does a coin flip
-                            -ru [words] : will translate something into russian
-                            -info : prints info about the bot
-                            -bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow.
-                            -rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
-                            -duck : duck
-                            -bucketlist : prints a to-do list
-                            -trans : prints out the bot's opinion on trans people
-                            -ping : works out the bot's ping
-                            -invite : gets a link for the server and an invite link for the bot
-                            -servers : Shows how many servers the bot is in
-                            -code : gets the link for the github so you can see what goes on under the hood```""")
+-search [query] : Does a google search for something
+-image [image] : Does a google image search for something
+-cf : does a coin flip
+-ru [words] : will translate something into russian
+-info : prints info about the bot
+-bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow.
+-rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
+-duck : duck
+-bucketlist : prints a to-do list
+-trans : prints out the bot's opinion on trans people
+-ping : works out the bot's ping
+-invite : gets a link for the server and an invite link for the bot
+-servers : Shows how many servers the bot is in
+-code : gets the link for the github so you can see what goes on under the hood
+-musichelp : Shows the help page for Music```""")
+
+@client.command()
+async def musichelp(ctx):
+    await ctx.send("""```-connect : brings the bot to your current vc
+-play [song] : plays a song or adds it to the queue
+-pause : Pauses the current song
+-resume : Resumes a paused song
+-queue : shows the current queue```""")
 
 
 
@@ -380,6 +386,5 @@ async def help(ctx):
 client.run(token)
 
 #To do
-#Music stuff. It would be hard but a very good feature.
 #Editable prefixes
 #Maybe premium commands you need to pay for?
