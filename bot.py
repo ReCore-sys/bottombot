@@ -366,13 +366,17 @@ async def help(ctx):
 
 @client.command()
 async def musichelp(ctx):
-    await ctx.send("""```-connect : Brings the bot to your current vc
--play [song] : Plays a song or adds it to the queue
--pause : Pauses the current song
--resume : Resumes a paused song
--queue : Shows the current queue
--skip : Votes to skip the current song
--stop : Stops the music```""")
+    await ctx.send("""```-connect : Connect to a voice channel.
+-play : Play or queue a song with the given query.
+-pause : Pause the currently playing song.
+-resume : Resume the currently paused song.
+-skip : Skip the currently playing song.
+-stop : Stop and reset the music player.
+-volume / -vol / -v : Change the music player's volume, between 1 and 100.
+-shuffle / -mix : Shuffle the music player's queue.
+-queue / -que / -q : Display's the music player's queued songs.
+-nowplaying / now_playing / current / np : Show the currently playing song.
+-swap_dj / -swap : Swap the current DJ to another member in the voice channel.```""")
 
 
 
