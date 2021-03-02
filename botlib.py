@@ -22,4 +22,18 @@ def check_banned(ctx):
     return True
 
 def nope():
-    return random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no","Haha no","God has forsaken you"])
+    return random.choice(["Did you really think that would work?","I'm not stupid, you are banned","Begone","Nope","All aboard the nope train to nahland","Twat","How about no","Haha no","God has forsaken you", "November Oscar Tango Golf Uniform November November Alpha Hotel Alpha Papa Papa Echo November", r"\:/"])
+
+
+with open(f"{filepath}/premium.txt", "r") as f:
+    #For every line in the file
+    for line in f:
+        ID = int(line)
+        paid_ids.append(ID)
+
+"""CHECK FUNCTION"""
+
+def premium(ctx):
+    if ctx.guild.id in paid_ids:
+        return True
+    return False
