@@ -185,7 +185,7 @@ async def tts(ctx, *, args):
 async def upgrade(ctx):
     if ctx.author.id == 451643725475479552:
         f = open(f"{filepath}/config/premium.txt", "a")
-        f.write(ctx.guild.id)
+        f.write(str(ctx.guild.id))
         f.close()
         await ctx.send("Server upgraded!")
     else:
