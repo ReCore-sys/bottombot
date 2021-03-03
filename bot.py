@@ -11,8 +11,8 @@ from discord.ext import commands
 from discord.ext import menus
 import better_profanity
 from translate import Translator
-from chatterbot import ChatBot
-from chatterbot.trainers import ListTrainer
+#from chatterbot import ChatBot
+#from chatterbot.trainers import ListTrainer
 from simpleeval import simple_eval
 import operator
 import ast
@@ -26,7 +26,7 @@ f = open(f"{filepath}/config/token.txt")
 token = str(f.readline()) #Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
 f.close()
 null = None #so I can write "null" instead of "None" and look like hackerman
-
+"""
 #Chatterbot stuff
 
 chatbot = ChatBot('Bottombot')
@@ -39,7 +39,7 @@ trainer.train([
     "UwU" #It starts with one word. I chose this
 ])
 #Chatterbot stuff
-
+"""
 
 client = discord.Client()
 
@@ -63,7 +63,6 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    await asyncio.sleep(5)
     client.load_extension("music")
 
 @client.event
@@ -186,11 +185,12 @@ async def upgrade(ctx):
     if ctx.author.id == 451643725475479552:
         f = open(f"{filepath}/config/premium.txt", "a")
         f.write(str(ctx.guild.id))
+        f.write("\n")
         f.close()
         await ctx.send("Server upgraded!")
     else:
         await ctx.send("Only ReCore can upgrade servers for now")
-
+"""
 canbb = True
 @client.command()
 async def bb(ctx, *, args):
@@ -208,6 +208,7 @@ async def bb(ctx, *, args):
             await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
     else:
         await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
+"""
 @client.command()
 async def maths(ctx, *, args):
     global ttst
@@ -262,8 +263,8 @@ async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
         print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
-        os.kill("java.exe")
-        os.kill("cmd.exe")
+        #os.kill("java.exe")
+        #os.kill("cmd.exe")
         exit()
     else:
         await ctx.send("Lol nah") #command to reboot the bot. Only I can use it.

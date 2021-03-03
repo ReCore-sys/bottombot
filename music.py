@@ -9,7 +9,9 @@ import re
 import typing
 import wavelink
 from discord.ext import commands, menus
-
+import os
+filepath = os.path.abspath(os.path.dirname(__file__))
+print(filepath)
 # URL matching REGEX...
 URL_REG = re.compile(r'https?://(?:www\.)?.+')
 
@@ -421,10 +423,14 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
         """Connect to a voice channel."""
-        f = open(f"{filepath}/logs.txt", "a")
+        print("1")
+        """f = open(f"{filepath}/logs.txt", "a")
+        print("2")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -connect\n")
-        f.close()
+        print("3")
+        f.close()"""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        print("4")
 
         if player.is_connected:
             return
@@ -432,16 +438,18 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         channel = getattr(ctx.author.voice, 'channel', channel)
         if channel is None:
             raise NoChannelProvided
+            print("5")
 
         await player.connect(channel.id)
+        print("6")
 
     @commands.command()
     async def play(self, ctx: commands.Context, *, query: str):
         """Play or queue a song with the given query."""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -play {args}\n")
-        f.close()
+        f.close()"""
         if not player.is_connected:
             await ctx.invoke(self.connect)
 
@@ -471,9 +479,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def pause(self, ctx: commands.Context):
         """Pause the currently playing song."""
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -pause\n")
-        f.close()
+        f.close()"""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if player.is_paused or not player.is_connected:
@@ -498,9 +506,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def resume(self, ctx: commands.Context):
         """Resume a currently paused player."""
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -resume\n")
-        f.close()
+        f.close()"""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_paused or not player.is_connected:
@@ -524,9 +532,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -skip\n")
-        f.close()
+        f.close()"""
         """Skip the currently playing song."""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
@@ -562,9 +570,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def stop(self, ctx: commands.Context):
         """Stop the player and clear all internal states."""
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -stop\n")
-        f.close()
+        f.close()"""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
@@ -587,9 +595,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     @commands.command(aliases=['v', 'vol'])
     async def volume(self, ctx: commands.Context, *, vol: int):
-        f = open(f"{filepath}/logs.txt", "a")
+        """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -volume {args}\n")
-        f.close()
+        f.close()"""
         """Change the players volume, between 1 and 100."""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
