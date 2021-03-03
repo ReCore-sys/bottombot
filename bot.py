@@ -181,23 +181,33 @@ async def tts(ctx, *, args):
         ttst = False
     await ctx.send(f"TTS set to {ttst}")
 
-
+@client.command()
+async def upgrade(ctx):
+    if ctx.author.id == 451643725475479552:
+        f = open(f"{filepath}/config/premium.txt", "a")
+        f.write(ctx.guild.id)
+        f.close()
+        await ctx.send("Server upgraded!")
+    else:
+        await ctx.send("Only ReCore can upgrade servers for now")
 
 canbb = True
 @client.command()
 async def bb(ctx, *, args):
     global ttst
-    if botlib.check_banned:
-        await ctx.trigger_typing()
-        response = chatbot.get_response(args)
-        print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
-        await ctx.send(response, tts=ttst)
-        f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
-        f.close()
+    if botlib.premium(ctx):
+        if botlib.check_banned:
+            await ctx.trigger_typing()
+            response = chatbot.get_response(args)
+            print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
+            await ctx.send(response, tts=ttst)
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
+            f.close()
+        else:
+            await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
     else:
-        await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
-
+        await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
 @client.command()
 async def maths(ctx, *, args):
     global ttst
@@ -376,7 +386,8 @@ async def musichelp(ctx):
 -shuffle / -mix : Shuffle the music player's queue.
 -queue / -que / -q : Display's the music player's queued songs.
 -nowplaying / now_playing / current / np : Show the currently playing song.
--swap_dj / -swap : Swap the current DJ to another member in the voice channel.```""")
+-swap_dj / -swap : Swap the current DJ to another member in the voice channel.
+-equaliser : music filters that are still under dev```""")
 
 
 
