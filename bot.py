@@ -19,7 +19,7 @@ import ast
 import datetime
 import botlib, bottomlib
 
-#pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
+#python3 -m pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
 badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 f = open(f"{filepath}/config/token.txt")
@@ -51,7 +51,7 @@ starttime = null
 
 @client.event
 async def on_ready():
-    os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
+    #os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
     activity = discord.Game(name="bottombot", type=3)
     status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
@@ -97,7 +97,7 @@ async def on_guild_join(guild): #this is called when the bot joins a new server
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
-        os.system(f'IF exist serversettings/{message.guild.id} ELSE mkdir serversettings/{message.guild.id} && echo \u001b[36mserversettings/{message.guild.id} created') #this makes the relevant folders for any servers that don't already have a serversettings entry.
+        #os.system(f'IF exist serversettings/{message.guild.id} ELSE mkdir serversettings/{message.guild.id} && echo \u001b[36mserversettings/{message.guild.id} created') #this makes the relevant folders for any servers that don't already have a serversettings entry.
         if message.author != client.user:
             pingC = message.content
             pingU = message.author
