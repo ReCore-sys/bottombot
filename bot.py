@@ -1,8 +1,9 @@
-﻿import os
+import os
 import asyncio
 import math
 import random
 import time
+import googlesearch
 from googlesearch import search
 import async_cse
 import discord
@@ -18,8 +19,9 @@ import operator
 import ast
 import datetime
 import botlib, bottomlib
+import urllib.parse
 
-#python3 -m pip install discord.py asyncio Chatterbot chatterbot_corpus async_cse googlesearch-python better-profanity translate simpleeval
+#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
 badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 f = open(f"{filepath}/config/token.txt")
@@ -53,7 +55,7 @@ starttime = null
 async def on_ready():
     #os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
     activity = discord.Game(name="bottombot", type=3)
-    status = random.choice(["ReCore's GPU melt","ReCore's CPU catch fire","God die","the old gods die","time end","reality crumple","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch"])
+    status = random.choice(["ReCore's CPU catch fire","the old gods die","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch","RealArdan on twitch"])
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
     channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
@@ -67,22 +69,18 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild): #this is called when the bot joins a new server
-    for channel in guild.text_channels:
-        if channel.permissions_for(guild.me).send_messages:
-            await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse !help to find out what commands I can use!')
-        break
     print(f"\u001b[35mJoined an new server! {guild.name} : {guild.id}\u001b[31m")
     #region Setup database
-    os.system(f'mkdir ./serversettings/{guild.id}') #Makes a folder under "serversettings" named the server's id
+    os.system(f'mkdir {filepath}/serversettings/{guild.id}') #Makes a folder under "serversettings" named the server's id
     f = open("logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Joined an new server! {guild.name} : {guild.id}\n") #logging that a new server was joined
     f.close()
-    os.system(f"touch ./serversettings/{guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
-    os.system(f"touch > ./serversettings/{guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    os.system(f"touch {filepath}/serversettings/{guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
+    os.system(f"touch {filepath}/serversettings/{guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
     f = open(f"{filepath}/serversettings/{guild.id}/serverdetails.txt", "a")
     f.write(f"Server name: {guild.name}\n")
     f.write(f"Server id: {guild.id}\n")
-    f.write(f"Server id: {guild.owner}\n")
+    f.write(f"Server owner: {guild.owner}\n")
     f.write(f"Server id: {guild.description}\n")
     f.write(f"Joined at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
     f.close()
@@ -90,28 +88,40 @@ async def on_guild_join(guild): #this is called when the bot joins a new server
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n") #logging that the database was set up properly
     f.close()
+    for channel in guild.text_channels:
+        if channel.permissions_for(guild.me).send_messages:
+            await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse !help to find out what commands I can use!')
+        break
     #endregion
-
+@client.command()
+async def init(ctx):
+    os.system(f'mkdir {filepath}/serversettings/{ctx.guild.id}')
+    os.system(f"touch {filepath}/serversettings/{ctx.guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
+    os.system(f"touch {filepath}/serversettings/{ctx.guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    f = open(f"{filepath}/serversettings/{ctx.guild.id}/serverdetails.txt", "w")
+    f.write("")
+    f.close
+    f = open(f"{filepath}/serversettings/{ctx.guild.id}/serverdetails.txt", "a")
+    f.write(f"Server name: {ctx.guild.name}\n")
+    f.write(f"Server id: {ctx.guild.id}\n")
+    f.write(f"Server owner: {ctx.guild.owner}\n")
+    f.write(f"Server desc: {ctx.guild.description}\n")
+    f.write(f"Init at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
+    f.close()
+    await ctx.send("Database setup!")
 
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
-        #os.system(f'IF exist serversettings/{message.guild.id} ELSE mkdir serversettings/{message.guild.id} && echo \u001b[36mserversettings/{message.guild.id} created') #this makes the relevant folders for any servers that don't already have a serversettings entry.
-        if message.author != client.user:
-            pingC = message.content
-            pingU = message.author
-            try:
-                f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
-                f.write(f"\n'{pingC}' was sent by {pingU}")
-                f.close()
-            except FileNotFoundError: #if the replay.txt file does not exist, create one then write to it.
-                os.system(f"touch serversettings/{message.guild.id}/replay.txt")
-                f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
-                f.write(f"\n'{pingC}' was sent by {pingU}")
-                f.close()
-    elif (message.content).lower == "hello there":
-        channel = message.channel
-        await channel.send('general kenobi')
+            os.system(f'mkdir serversettings/{message.guild.id}')
+            os.system(f"touch serversettings/{message.guild.id}/replay.txt")#this makes the relevant folders for any servers that don't already have a serversettings entry.
+            if message.author != client.user:
+                    pingC = message.content
+                    pingU = message.author
+                    f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
+                    f.write(f"\n'{pingC}' was sent by {pingU}")
+                    f.close()
+        
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
 
 @client.command()
@@ -277,6 +287,11 @@ async def trans(ctx):
     await ctx.send(":transgender_flag: Trans rights are human rights :transgender_flag: ")
 
 @client.command()
+async def game(ctx, args):
+    query = urllib.parse.quote(args)
+    await ctx.send(f"https://www.g2a.com/search?query={query}")
+
+@client.command()
 async def bucketlist(ctx):
     list = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power", "willfully depriving a protected person of the right to a fair trial if accused of a war crime.", "taking of hostages", "extensive destruction and appropriation of property not justified by military necessity and carried out unlawfully and wantonly", "unlawful deportation, transfer, or confinement."])
     await ctx.send(list)
@@ -364,7 +379,7 @@ async def help(ctx):
 -cf : does a coin flip
 -ru [words] : will translate something into russian
 -info : prints info about the bot
--bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow.
+-bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow. **Currently not working**. I am looking into it.
 -rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
 -duck : duck
 -bucketlist : prints a to-do list
@@ -373,7 +388,8 @@ async def help(ctx):
 -invite : gets a link for the server and an invite link for the bot
 -servers : Shows how many servers the bot is in
 -code : gets the link for the github so you can see what goes on under the hood
--musichelp : Shows the help page for Music```""")
+-musichelp : Shows the help page for Music
+-init : Sets up the database for the server. It's a good idea to run this whenever the owner or name changes. Also run this if you have not seen this command before.```""")
 
 @client.command()
 async def musichelp(ctx):
