@@ -20,8 +20,11 @@ import ast
 import datetime
 import botlib, bottomlib
 import urllib.parse
+from pprint import pprint
+import requests
+import cleverbotfree.cbfree
 
-#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval
+#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
 badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 f = open(f"{filepath}/config/token.txt")
@@ -49,7 +52,8 @@ client = commands.Bot(command_prefix = "-")
 
 client.remove_command('help')
 starttime = null
-
+appid = "APXP5R-JWJV4JW87W"
+cb = cleverbotfree.cbfree.Cleverbot()
 
 @client.event
 async def on_ready():
@@ -121,7 +125,6 @@ async def on_message(message):
                     f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                     f.write(f"\n'{pingC}' was sent by {pingU}")
                     f.close()
-        
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
 
 @client.command()
@@ -200,42 +203,53 @@ async def upgrade(ctx):
         await ctx.send("Server upgraded!")
     else:
         await ctx.send("Only ReCore can upgrade servers for now")
-"""
-canbb = True
+
 @client.command()
 async def bb(ctx, *, args):
     global ttst
     if botlib.premium(ctx):
         if botlib.check_banned:
-            await ctx.trigger_typing()
-            response = chatbot.get_response(args)
-            print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
-            await ctx.send(response, tts=ttst)
-            f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
-            f.close()
+            try:
+                cb.browser.get(cb.url)
+            except:
+                print("There was an error so we exited")
+                await ctx.send("Something isn't working right")
+                cb.browser.close()
+            try:
+                cb.get_form()
+            except:
+                print("There was an error so we exited")
+                await ctx.send("Something isn't working right")
+            userInput = args
+            cb.send_input(userInput)
+            bot = cb.get_response()
+            await ctx.send(bot)
         else:
             await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
     else:
         await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
-"""
+
 @client.command()
 async def maths(ctx, *, args):
     global ttst
     global s
-    try:
-        if botlib.check_banned(ctx):
-            await ctx.trigger_typing()
-            response = simple_eval(args.replace("^", "**"), functions={"sqrt": lambda x: math.sqrt(x)})
-            print(f"\u001b[33;1m{ctx.message.guild.name} | {ctx.message.author}: {args} -> {response}\u001b[31m")
-            await ctx.send(response, tts=ttst)
-            f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bb {args} -> {response}\n")
-            f.close()
-        else:
-            await ctx.send(botlib.nope)
-    except NumberTooHigh:
-        await ctx.send("Result was too high")
+    if botlib.check_banned(ctx):
+        equation = args
+        query = urllib.parse.quote_plus(f"solve {equation}")
+        query_url = f"https://api.wolframalpha.com/v2/query?" \
+                f"appid={appid}" \
+                f"&input={query}" \
+                f"&includepodid=Result" \
+                f"&output=json"
+
+        r = requests.get(query_url).json()
+
+        data = r["queryresult"]["pods"][0]["subpods"][0]
+        plaintext = data["plaintext"]
+
+        await  ctx.send(f"Result of {equation} is '{plaintext}'.", tts=ttst)
+    else:
+        await ctx.send(botlib.nope)
 
 @client.command()
 async def ping(ctx):
@@ -264,6 +278,7 @@ async def info(ctx):
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
         os.kill("java.exe")
+        cb.browser.close()
         exit()
     else:
         await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
@@ -273,6 +288,7 @@ async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
         print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
+        cb.browser.close()
         #os.kill("java.exe")
         #os.kill("cmd.exe")
         exit()
@@ -363,8 +379,9 @@ async def duck(ctx):
 
 @client.command()
 async def bottomgear(ctx):
+    global ttst
     output = bottomlib.bottomchoice()
-    await ctx.send(output, tts=True)
+    await ctx.send(output, tts=ttst)
     print("\u001b[33;1mDone: !bottomgear\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bottomgear {output}\n")

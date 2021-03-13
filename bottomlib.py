@@ -8,5 +8,9 @@ def bottomchoice():
             verb3 = random.choice(["jacks off", "uninstalls", "eviscerates","obliterates","assults", "finds the secret cross-dressing wardrobe of", "speed-dates", "invests in bitcoin with", "falls in love with", "dismantles", "severely irradiates","sensually kisses"])
             noun3 = random.choice(["my dick","Satan","the Syrian schoolhouse","your future kids", "a Tsar Bomba", "the Gustav Railway Gun", "Zimbabwe", "Mark Zuckerberg", "Jeff Bezos", "Uncle Sam", "The Chinese Communist Party", "Great Leader Kim Jong Un, wise and just ruler of The Democratic People's Republic of North Korea, greatest nation of all time", "an A-10 warthog", "the Lockheed-Martin company", "the exhaust pipe of a Western Star cargo truck", "a BMW motorbike", "an electric car", "7 metric tonnes of raw plutonium ore", "2 crates of C4", "an entire keg of beer", "a quaint village bakery in western France", "an elderly gardener", "Donald J Trump", "Bernie Sanders", "Stalin","a duck"])
             consequence = random.choice(["deeply regrets it", "gets a huge boner from it", "is anointed Grand High Emperor", "is promptly arrested", "gets sent to a gulag", "gets stabbed", "is tried for war crimes", "is found innocent", "receives a life sentence", "gets addicted", "is nominated for a Nobel Peace Prize", "is violently and lovingly dismembered", "is turned inside out", "gets to meet the man of his dreams","loses in monopoly"])
-            output = f"Tonight on bottomgear James {verb1} {noun1}, I {verb2} {noun2} and Hammond {verb3} {noun3} and {consequence}" #this compiles a random choice from each list into one large string. Feel free to add stuff to the list.
+
+            james = random.choice(["James","James","james","jmaes","janes","Jams"])
+            hammond = random.choice(["Hammond","Hammond","hammond","ham","hamoc","Hamnd","hmalet","hampomd"])
+
+            output = f"Tonight on bottomgear {james} {verb1} {noun1}, I {verb2} {noun2} and {hammond} {verb3} {noun3} and {consequence}" #this compiles a random choice from each list into one large string. Feel free to add stuff to the list.
             return str(output)

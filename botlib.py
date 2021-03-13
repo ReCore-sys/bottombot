@@ -13,7 +13,6 @@ with open(f"{filepath}/config/BannedIDs.txt", "r") as f:
     for line in f:
         ID = int(line)
         banned_ids.append(ID)
-print(banned_ids)
 
 """CHECK FUNCTION"""
 
