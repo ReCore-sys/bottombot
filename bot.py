@@ -18,33 +18,23 @@ from simpleeval import simple_eval
 import operator
 import ast
 import datetime
-import botlib, bottomlib
+import botlib, bottomlib, money
 import urllib.parse
 from pprint import pprint
 import requests
 import cleverbotfree.cbfree
+import wolframalpha
+import platform
 
-#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree
+
+#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
 badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 f = open(f"{filepath}/config/token.txt")
 token = str(f.readline()) #Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
 f.close()
 null = None #so I can write "null" instead of "None" and look like hackerman
-"""
-#Chatterbot stuff
 
-chatbot = ChatBot('Bottombot')
-
-trainer = ListTrainer(chatbot)
-
-trainer.export_for_training(f'{filepath}/my_export.json') #exporting the saved training data
-
-trainer.train([
-    "UwU" #It starts with one word. I chose this
-])
-#Chatterbot stuff
-"""
 
 client = discord.Client()
 
@@ -58,9 +48,12 @@ cb = cleverbotfree.cbfree.Cleverbot()
 @client.event
 async def on_ready():
     #os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
-    activity = discord.Game(name="bottombot", type=3)
-    status = random.choice(["ReCore's CPU catch fire","the old gods die","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch","RealArdan on twitch"])
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
+    if platform.system() == "Windows":
+        await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Testing"))
+    else:
+        activity = discord.Game(name="bottombot", type=3)
+        status = random.choice(["ReCore's CPU catch fire","the old gods die","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch","RealArdan on twitch"])
+        await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
     channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
     await channel.send('Bot is up')
@@ -70,6 +63,7 @@ async def on_ready():
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
     client.load_extension("music")
+    client.load_extension("money")
 
 @client.event
 async def on_guild_join(guild): #this is called when the bot joins a new server
@@ -94,7 +88,7 @@ async def on_guild_join(guild): #this is called when the bot joins a new server
     f.close()
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
-            await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse !help to find out what commands I can use!')
+            await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse -help to find out what commands I can use!')
         break
     #endregion
 @client.command()
@@ -115,6 +109,12 @@ async def init(ctx):
     await ctx.send("Database setup!")
 
 @client.event
+async def on_member_join(member):
+    role = discord.utils.get(member.server.roles, id=821166866348376116)
+    if (member.id == 821161880734793738):
+        await bot.add_roles(member, role)
+
+@client.event
 async def on_message(message):
     if '<@!' in message.content:
             os.system(f'mkdir serversettings/{message.guild.id}')
@@ -125,23 +125,27 @@ async def on_message(message):
                     f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                     f.write(f"\n'{pingC}' was sent by {pingU}")
                     f.close()
+
+    r = random.randint(0,14)
+    u = message.author.id
+    if (r == 9) and (message.author.id != 758912539836547132):
+        money.addmoney(u, 1)
+        print(f"$1 was added to {message.author}")
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
+
 
 @client.command()
 async def rewind(ctx, arg1):
     if arg1.isnumeric():
-        try:
-            with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
-                lines = f.read().splitlines()
-                last_line = lines[int(arg1) * -1]
-                print(f"\u001b[33;1mMention: {last_line} was called\u001b[31m")
-                await ctx.send(last_line)
-                f.close()
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {arg1} was called with the result '{last_line}'\n")
-                f.close()
-        except FileNotFoundError:
-            await ctx.send("No @ mentions have been sent in this server. Please report this if it is an error")
+        with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
+            lines = f.read().splitlines()
+            last_line = lines[int(arg1) * -1]
+            print(f"\u001b[33;1mMention: {last_line} was called\u001b[31m")
+            await ctx.send(last_line)
+            f.close()
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {arg1} was called with the result '{last_line}'\n")
+            f.close()
     else:
         await ctx.send("I need a number stupid")
 
@@ -164,6 +168,7 @@ async def code(ctx):
 @client.command()
 async def servers(ctx):
     await ctx.send(str(len(client.guilds)) + " servers have been infected!")
+
 
 @client.command()
 async def roll(ctx, arg1):
@@ -207,6 +212,7 @@ async def upgrade(ctx):
 @client.command()
 async def bb(ctx, *, args):
     global ttst
+    ctx.message.channel.typing()
     if botlib.premium(ctx):
         if botlib.check_banned:
             try:
@@ -223,6 +229,10 @@ async def bb(ctx, *, args):
             userInput = args
             cb.send_input(userInput)
             bot = cb.get_response()
+            print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+            f = open(f"{filepath}/logs.txt", "a")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+            f.close()
             await ctx.send(bot)
         else:
             await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
@@ -233,21 +243,31 @@ async def bb(ctx, *, args):
 async def maths(ctx, *, args):
     global ttst
     global s
+    global appid
+    fargs = args.replace('-steps', '')
     if botlib.check_banned(ctx):
-        equation = args
-        query = urllib.parse.quote_plus(f"solve {equation}")
-        query_url = f"https://api.wolframalpha.com/v2/query?" \
-                f"appid={appid}" \
-                f"&input={query}" \
-                f"&includepodid=Result" \
-                f"&output=json"
+        try:
+            equation = fargs
+            query = urllib.parse.quote_plus(f"solve {equation}")
+            query_url = f"https://api.wolframalpha.com/v2/query?" \
+                        f"appid={appid}" \
+                        f"&input={query}" \
+                        f"&scanner=Solve" \
+                        f"&podstate=Result__Step-by-step+solution" \
+                        "&format=plaintext" \
+                        f"&output=json"
 
-        r = requests.get(query_url).json()
+            r = requests.get(query_url).json()
 
-        data = r["queryresult"]["pods"][0]["subpods"][0]
-        plaintext = data["plaintext"]
+            data = r["queryresult"]["pods"][0]["subpods"]
+            result = data[0]["plaintext"]
+            steps = data[1]["plaintext"]
 
-        await  ctx.send(f"Result of {equation} is '{plaintext}'.", tts=ttst)
+            await ctx.send(f"**Result of {equation} is '{result}'.**\n")
+            if "-steps" in args:
+                await ctx.send(f"Possible steps to solution:\n\n{steps}")
+        except:
+            await ctx.send("That didn't work. Not sure why. Probably some 'Key Error: pods' BS.")
     else:
         await ctx.send(botlib.nope)
 
@@ -269,7 +289,7 @@ async def info(ctx):
     embed.add_field(name="Reason", value="I was bored and want to make a bot", inline=False)
     embed.add_field(name="Functionality?", value="no", inline=False)
     embed.add_field(name="Made with", value="Love, care, ages on stackoverflow.com, bugging <@416101701574197270> and copious amounts of cocaine.", inline=False)
-    print("\u001b[33;1mDone: !info\u001b[31m")
+    print("\u001b[33;1mDone: -info\u001b[31m")
 
     await ctx.send(embed=embed)
 
@@ -277,7 +297,6 @@ async def info(ctx):
 @client.command()
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
-        os.kill("java.exe")
         cb.browser.close()
         exit()
     else:
@@ -335,7 +354,7 @@ async def search(ctx, *, args):
         await ctx.send("You think I'm stupid? Don't answer that.")
 
     if botlib.check_banned(ctx):
-        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
+        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
         results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
         first_result = results[0] # Grab the first result
         if "urbandictionary" in first_result.url:
@@ -358,7 +377,7 @@ async def image(ctx,*,args):
             print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
     elif botlib.check_banned(ctx):
-        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default!)
+        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
         results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
         first_result = results[0] # Grab the first result
         if "urbandictionary" in first_result.image_url:
@@ -367,7 +386,7 @@ async def image(ctx,*,args):
             await ctx.send(f"{first_result.image_url}")
             await client.close()
             f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.image_url}\n")
+            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
             f.close()
 
     else:
@@ -382,9 +401,9 @@ async def bottomgear(ctx):
     global ttst
     output = bottomlib.bottomchoice()
     await ctx.send(output, tts=ttst)
-    print("\u001b[33;1mDone: !bottomgear\u001b[31m")
+    print("\u001b[33;1mDone: -bottomgear\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
-    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !bottomgear {output}\n")
+    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bottomgear {output}\n")
     f.close()
 
 

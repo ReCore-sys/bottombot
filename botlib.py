@@ -37,3 +37,10 @@ def premium(ctx):
     if ctx.guild.id in paid_ids:
         return True
     return False
+
+def nametoid(name):
+    val = str(name)
+    val = val.replace("<@!","")
+    val = val.replace(">","")
+    print(val)
+    return val
