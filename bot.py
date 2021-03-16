@@ -208,36 +208,39 @@ async def upgrade(ctx):
         await ctx.send("Server upgraded!")
     else:
         await ctx.send("Only ReCore can upgrade servers for now")
-
+canbb = False
 @client.command()
 async def bb(ctx, *, args):
     global ttst
-    ctx.message.channel.typing()
-    if botlib.premium(ctx):
-        if botlib.check_banned:
-            try:
-                cb.browser.get(cb.url)
-            except:
-                print("There was an error so we exited")
-                await ctx.send("Something isn't working right")
-                cb.browser.close()
-            try:
-                cb.get_form()
-            except:
-                print("There was an error so we exited")
-                await ctx.send("Something isn't working right")
-            userInput = args
-            cb.send_input(userInput)
-            bot = cb.get_response()
-            print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
-            f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
-            f.close()
-            await ctx.send(bot)
-        else:
-            await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
+    if canbb == False:
+        await ctx.send("No, fuck off")
     else:
-        await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
+        ctx.message.channel.typing()
+        if botlib.premium(ctx):
+            if botlib.check_banned:
+                try:
+                    cb.browser.get(cb.url)
+                except:
+                    print("There was an error so we exited")
+                    await ctx.send("Something isn't working right")
+                    cb.browser.close()
+                try:
+                    cb.get_form()
+                except:
+                    print("There was an error so we exited")
+                    await ctx.send("Something isn't working right")
+                userInput = args
+                cb.send_input(userInput)
+                bot = cb.get_response()
+                print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+                f = open(f"{filepath}/logs.txt", "a")
+                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+                f.close()
+                await ctx.send(bot)
+            else:
+                await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
+        else:
+            await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
 
 @client.command()
 async def maths(ctx, *, args):

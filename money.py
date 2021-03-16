@@ -23,7 +23,7 @@ def balfind(dbid): #function to find the balance of the id dbid
         val = re[0]
         return val['bal']
     except:
-        return False
+        return None
 
 def rankfind(dbid): #same as above but for ranks, not bal
     re = db.search(s.urank==dbid)
@@ -74,15 +74,15 @@ class money(commands.Cog):
     @commands.command(aliases=["acc", "balance", "bal", "a"]) #shows the user's account
     async def account(self, ctx, *, target: discord.Member = None):
 
-        if (target == None) and (balfind(ctx.message.author.id) == False):
+        if (target == None) and (balfind(ctx.message.author.id) == None):
             db.insert({'user': ctx.message.author.id, 'bal': 100})
             db.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
             await ctx.send("Account created!") #if the user does not have an account, create one
 
-        elif (target != None) and (balfind(ctx.message.author.id) == False):
+        elif (target != None) and (balfind(ctx.message.author.id) == None):
             await ctx.send("That user does not have an account set up") #if the user pings someone who does not have an account, send this
 
-        elif (target == None) and (balfind(ctx.message.author.id) != False): #show your balance if you don't enter someone else's account name
+        elif (target == None) and (balfind(ctx.message.author.id) != None): #show your balance if you don't enter someone else's account name
             user = ctx.message.author
             embed = discord.Embed(title=f"{user}", description="Account info", color=0x8800ff)
             embed.set_thumbnail(url=user.avatar_url)
@@ -91,7 +91,7 @@ class money(commands.Cog):
             embed.add_field(name="Rank", value=f"{rankfind(user.id)}", inline=False)
             await ctx.send(embed=embed)
 
-        elif (target != None) and (balfind(ctx.message.author.id) != False): #show someone else's account if you do ping someone
+        elif (target != None) and (balfind(ctx.message.author.id) != None): #show someone else's account if you do ping someone
             userid = int(botlib.nametoid(target.id))
             username = ctx.guild.get_member(userid)
             embed = discord.Embed(title=f"{target}", description="Account info", color=0x8800ff)
@@ -147,6 +147,8 @@ class money(commands.Cog):
             embed.set_footer(text='Use "-rank buy [rank name]" to buy a rank')
             await ctx.send(embed=embed)
         else: #if they do have it, start doing stuff
+            crank = rankfind(int(user))
+            crankv = ranks[crank.lower()]
             val = int(ranks[rank.lower()])
             if rank == None:
                 await ctx.send("Please choose a rank to buy") #if they don't enter a rank to buy
@@ -154,8 +156,12 @@ class money(commands.Cog):
                 await ctx.send("That was not a valid rank") #if the rank does not appear in the ranks list (dict)
             elif canbuy(val, user) == False:
                 await ctx.send("You do not have enough money to buy this") #explains itself
+            elif crankv > val:
+                await ctx.send("You can't buy a lower rank")
+            elif crankv == int(ranks[rank.lower()]):
+                await ctx.send("You can't buy your current rank")
             else:
-                cost =  val * -1 #turn the value into a negative so you can buy it properly
+                cost =  0 - val  #turn the value into a negative so you can buy it properly
                 rank2 = rankup[rank.lower()] #gets the display name of the rank
                 db.update({"rank": rank2}, s.urank == int(ctx.message.author.id)) #writes new rank to db
                 addmoney(user, cost) #takes the money from the account (adds a negative value)
