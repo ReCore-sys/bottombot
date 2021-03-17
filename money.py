@@ -138,7 +138,7 @@ class money(commands.Cog):
             await ctx.send("Sorry, that person either does not exist or has not set up their account.") #if that user's balance is None, they don't exist
         elif arg1.isnumeric == False: #if you try paying someone something that isn't a number
             await ctx.send("You need to give me a number")
-        elif (int(arg1) >= urval) or (urval - arg1 <= 0): #if either you have less than $1 or you try and pay more than you have
+        elif (int(arg1) >= urval) or (urval - int(arg1) <= 0): #if either you have less than $1 or you try and pay more than you have
             await ctx.send("Sorry, you don't have enough money")
         else: #if you can actually pay them
             urval = urval - int(arg1) #takes the amount from your bal
@@ -219,19 +219,19 @@ class money(commands.Cog):
             embed.set_footer(text='Use "-rank buy [rank name]" to buy a rank')
             await ctx.send(embed=embed)
         else: #if they do have it, start doing stuff
-            crank = rankfind(int(user))
-            crankv = ranks[crank.lower()]
-            val = int(ranks[rank.lower()])
+            # crank = rankfind(int(user))
+            # crankv = ranks[crank.lower()]
+            val = ranks[rank.lower()]
             if rank == None:
                 await ctx.send("Please choose a rank to buy") #if they don't enter a rank to buy
             elif (rank.lower() in ranks) == False:
                 await ctx.send("That was not a valid rank") #if the rank does not appear in the ranks list (dict)
             elif canbuy(val, user) == False:
                 await ctx.send("You do not have enough money to buy this") #explains itself
-            elif crankv > val:
-                await ctx.send("You can't buy a lower rank")
-            elif crankv == int(ranks[rank.lower()]):
-                await ctx.send("You can't buy your current rank")
+            # elif crankv > val:
+                # await ctx.send("You can't buy a lower rank")
+            # elif crankv == int(ranks[rank.lower()]):
+                # await ctx.send("You can't buy your current rank")
             else:
                 cost =  0 - val  #turn the value into a negative so you can buy it properly
                 rank2 = rankup[rank.lower()] #gets the display name of the rank
