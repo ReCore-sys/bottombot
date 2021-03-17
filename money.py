@@ -168,7 +168,7 @@ class money(commands.Cog):
         else:
             await ctx.send("You do not have an account. Do -account to make one")
 
-    @commands.command(aliases=["stock","stonk","stocks"])
+    @commands.command(aliases=["stock","stonk","stonks"])
     async def stocks(self, ctx, action = None, count = None):
         global stock
         global cost
@@ -192,11 +192,11 @@ class money(commands.Cog):
                 elif (action == "sell") and (count > stockcount):
                     await ctx.send("You don't own that many stocks")
                 elif action == "buy":
-                    addmoney(user, (0 - (cost * count)))
+                    addmoney(user, (0 - fcost))
                     addstock(user, count)
                     await ctx.send(f"{count} stocks bought for ${fcost}")
                 elif action == "sell":
-                    addmoney(user, (cost * count))
+                    addmoney(user, fcost)
                     addstock(user, (0 - count))
                     await ctx.send(f"{count} stocks sold for ${fcost}")
 
