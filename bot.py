@@ -129,8 +129,9 @@ async def on_message(message):
     r = random.randint(0,14)
     u = message.author.id
     if (r == 9) and (message.author.id != 758912539836547132):
-        money.addmoney(u, 1)
-        print(f"$1 was added to {message.author}")
+        if money.balfind(u) != None:
+            money.addmoney(u, 1)
+            print(f"$1 was added to {message.author}")
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
 
 
@@ -208,39 +209,41 @@ async def upgrade(ctx):
         await ctx.send("Server upgraded!")
     else:
         await ctx.send("Only ReCore can upgrade servers for now")
-canbb = False
+canbb = True
 @client.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def bb(ctx, *, args):
     global ttst
-    if canbb == False:
-        await ctx.send("No, fuck off")
-    else:
-        ctx.message.channel.typing()
-        if botlib.premium(ctx):
-            if botlib.check_banned:
-                try:
-                    cb.browser.get(cb.url)
-                except:
-                    print("There was an error so we exited")
-                    await ctx.send("Something isn't working right")
-                    cb.browser.close()
-                try:
-                    cb.get_form()
-                except:
-                    print("There was an error so we exited")
-                    await ctx.send("Something isn't working right")
-                userInput = args
-                cb.send_input(userInput)
-                bot = cb.get_response()
-                print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
-                f.close()
-                await ctx.send(bot)
-            else:
-                await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
+    async with ctx.channel.typing():
+        if canbb == False:
+            await ctx.send("No, fuck off")
         else:
-            await ctx.send("Sorry, you don't have premium\nContact <@!451643725475479552> in the bot's server to upgrade your server")
+            ctx.message.channel.typing()
+            if money.ranktoid(ctx.message.author.id) >= 2:
+                if botlib.check_banned:
+                    try:
+                        cb.browser.get(cb.url)
+                    except:
+                        print("There was an error so we exited")
+                        await ctx.send("Something isn't working right")
+                        cb.browser.close()
+                    try:
+                        cb.get_form()
+                    except:
+                        print("There was an error so we exited")
+                        await ctx.send("Something isn't working right")
+                    userInput = args
+                    cb.send_input(userInput)
+                    bot = cb.get_response()
+                    print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+                    f = open(f"{filepath}/logs.txt", "a")
+                    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+                    f.close()
+                    await ctx.send(bot)
+                else:
+                    await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
+            else:
+                await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
 
 @client.command()
 async def maths(ctx, *, args):
@@ -282,7 +285,7 @@ async def ping(ctx):
     ping = round((time_2-time_1)*1000)
     embed = discord.Embed(title="Pong!", description=f"Currant Latancy = {ping}. Lol u got slow internet")
     await ctx.send(embed=embed)
-    print ("\u001b[33;1mDone: ping = " + ping)
+    print ("\u001b[33;1mDone: ping = " + str(ping))
 
 @client.command()
 async def info(ctx):
@@ -418,7 +421,7 @@ async def help(ctx):
 -cf : does a coin flip
 -ru [words] : will translate something into russian
 -info : prints info about the bot
--bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow. **Currently not working**. I am looking into it.
+-bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow. Please don't spam it.
 -rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
 -duck : duck
 -bucketlist : prints a to-do list

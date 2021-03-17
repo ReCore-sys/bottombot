@@ -32,6 +32,10 @@ def rankfind(dbid): #same as above but for ranks, not bal
         return val['rank']
     except:
         return False
+def ranktoid(dbid):
+    userrank = rankfind(dbid)
+    rankid = rankids[userrank.lower()]
+    return rankid
 
 def canbuy(price, id): #simple function to check if a user can buy something. Price must be an int.
     bal = balfind(id)
@@ -41,7 +45,10 @@ def canbuy(price, id): #simple function to check if a user can buy something. Pr
         return False
 def addmoney(user, amount): #Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
     val = balfind(user)
-    val = val + amount
+    try:
+        val = val + amount
+    except:
+        print("User does not exist")
     db.update({"bal": val}, s.user == user)
 #rank tiering
 #Bronze
@@ -67,6 +74,14 @@ rankup = {
     'immortal': 'Immortal',
     'ascendant': 'Ascendant' #dict for ranks against display name
     }
+rankids = {
+    'silver': 2,
+    'gold': 3,
+    'platinum': 4,
+    'diamond': 5,
+    'immortal': 6,
+    'ascendant': 7
+}
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -130,6 +145,13 @@ class money(commands.Cog):
             await ctx.send(f"${arg1} added")
         else:
             await ctx.send("Nope")
+
+    @commands.command(pass_context=True)
+    @commands.cooldown(1, 60*60*24, commands.BucketType.user)
+    async def daily(self, ctx):
+        r = random.randint(1,20)
+        addmoney(ctx.message.author.id, r)
+        await ctx.send(f"${r} was added to your account")
 
     @commands.command()
     async def rank(self, ctx, ag1 = None, rank=None): #allows someone to buy a rank
