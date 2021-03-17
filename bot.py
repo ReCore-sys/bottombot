@@ -1,30 +1,10 @@
-import os
-import asyncio
-import math
-import random
-import time
-import googlesearch
+import os, asyncio, math, random, time, better_profanity, async_cse, discord, operator, ast, datetime, urllib.parse, requests, wolframalpha, platform, cleverbotfree
 from googlesearch import search
-import async_cse
-import discord
 from async_timeout import timeout
-from discord.ext import commands
-from discord.ext import menus
-import better_profanity
+from discord.ext import menus, commands
 from translate import Translator
-#from chatterbot import ChatBot
-#from chatterbot.trainers import ListTrainer
-from simpleeval import simple_eval
-import operator
-import ast
-import datetime
 import botlib, bottomlib, money
-import urllib.parse
 from pprint import pprint
-import requests
-import cleverbotfree.cbfree
-import wolframalpha
-import platform
 
 
 #python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
