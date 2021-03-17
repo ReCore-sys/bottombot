@@ -414,15 +414,31 @@ async def bottomgear(ctx):
 
 
 @client.command()
-async def help(ctx):
-    await ctx.send("""```-bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
--search [query] : Does a google search for something
--image [image] : Does a google image search for something
+async def help(ctx, menu = None):
+    if menu == "music":
+        await ctx.send("""```-connect : Connect to a voice channel.
+-play <song name> : Play or queue a song with the given query.
+-pause : Pause the currently playing song.
+-resume : Resume the currently paused song.
+-skip : Skip the currently playing song.
+-stop : Stop and reset the music player.
+-volume / -vol / -v <1-100> : Change the music player's volume, between 1 and 100.
+-shuffle / -mix : Shuffle the music player's queue.
+-queue / -que / -q : Display's the music player's queued songs.
+-nowplaying / now_playing / current / np : Show the currently playing song.
+-swap_dj / -swap <user> : Swap the current DJ to another member in the voice channel.
+-equaliser : music filters that are still under dev```""")
+    elif menu == "money":
+        await ctx.send("```-account / -a / -bal / -balance [user]: Shows the bank account of the pinged user. If none pinged will show your own. \n-pay <amount> <user> : pays <amount> from your bank account into <user>. \n-rank [buy] <rank> : used to buy ranks. If none selected will show the price of the ranks. \n-daily : earns you between $1 and $20. Has a 24 hour cooldown.\n-stocks / -stock / -stonks [buy/sell] <number to buy/sell> : running without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks```\n**You will need to run -account to set up your account before doing anything else**")
+    else:
+        await ctx.send("""**For all listed commands, [] means optional, <> means required.**\n```-bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
+-search <query> : Does a google search for something
+-image <image> : Does a google image search for something
 -cf : does a coin flip
--ru [words] : will translate something into russian
+-ru <words> : will translate something into russian
 -info : prints info about the bot
--bb [sentence] : calls the AI chatbot to respond to what you said. Is very buggy and slow. Please don't spam it.
--rewind [number of mentions to go back]: Prints the most recent mention of anyone in the server and what was said.
+-bb <sentence> : calls the AI chatbot to respond to what you said. Is very buggy and slow. Please don't spam it.
+-rewind <number of mentions to go back>: Prints the most recent mention of anyone in the server and what was said.
 -duck : duck
 -bucketlist : prints a to-do list
 -trans : prints out the bot's opinion on trans people
@@ -430,23 +446,12 @@ async def help(ctx):
 -invite : gets a link for the server and an invite link for the bot
 -servers : Shows how many servers the bot is in
 -code : gets the link for the github so you can see what goes on under the hood
--musichelp : Shows the help page for Music
--init : Sets up the database for the server. It's a good idea to run this whenever the owner or name changes. Also run this if you have not seen this command before.```""")
+-init : Sets up the database for the server. It's a good idea to run this whenever the owner or name changes. Also run this if you have not seen this command before.
+```
+Do -help music for help with music commands
+Do -help money for help with economy commands (Still in Beta)""")
 
-@client.command()
-async def musichelp(ctx):
-    await ctx.send("""```-connect : Connect to a voice channel.
--play : Play or queue a song with the given query.
--pause : Pause the currently playing song.
--resume : Resume the currently paused song.
--skip : Skip the currently playing song.
--stop : Stop and reset the music player.
--volume / -vol / -v : Change the music player's volume, between 1 and 100.
--shuffle / -mix : Shuffle the music player's queue.
--queue / -que / -q : Display's the music player's queued songs.
--nowplaying / now_playing / current / np : Show the currently playing song.
--swap_dj / -swap : Swap the current DJ to another member in the voice channel.
--equaliser : music filters that are still under dev```""")
+
 
 
 

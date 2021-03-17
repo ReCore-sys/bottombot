@@ -1,21 +1,29 @@
-import os
-import asyncio
-import math
-import random
-import time
-import async_cse
-import discord
+import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib
 from async_timeout import timeout
-import discord.ext
-from discord.ext import commands
+from discord.ext import commands, tasks
 from tinydb import TinyDB, Query
-import botlib
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 db = TinyDB(f'{filepath}/config/db.json')
 s = Query()
 
 
+
+def stockfind(dbid): #function to find how many stock a person owns
+    re = db.search(s.suser==dbid)
+    try:
+        val = re[0]
+        return val['stock']
+    except:
+        print("This user does not exist")
+        return None
+def addstock(user, amount): #Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
+    val = stockfind(user)
+    try:
+        val = val + amount
+    except:
+        print("User does not exist")
+    db.update({"stock": val}, s.suser == user)
 
 def balfind(dbid): #function to find the balance of the id dbid
     re = db.search(s.user==dbid)
@@ -35,7 +43,7 @@ def rankfind(dbid): #same as above but for ranks, not bal
 def ranktoid(dbid):
     userrank = rankfind(dbid)
     rankid = rankids[userrank.lower()]
-    return rankid
+    return rankid #simply gets a user's id and turns it into their rank's id
 
 def canbuy(price, id): #simple function to check if a user can buy something. Price must be an int.
     bal = balfind(id)
@@ -80,18 +88,22 @@ rankids = {
     'platinum': 4,
     'diamond': 5,
     'immortal': 6,
-    'ascendant': 7
+    'ascendant': 7 #rank compared to it's id. Usefule for permission levels
 }
+
+cost = 50 #default cost of stocks, before applying modifiers
+mult = 1
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.cost.start()
 
     @commands.command(aliases=["acc", "balance", "bal", "a"]) #shows the user's account
     async def account(self, ctx, *, target: discord.Member = None):
-
         if (target == None) and (balfind(ctx.message.author.id) == None):
             db.insert({'user': ctx.message.author.id, 'bal': 100})
             db.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
+            db.insert({'suser': ctx.message.author.id, 'stock': 0})
             await ctx.send("Account created!") #if the user does not have an account, create one
 
         elif (target != None) and (balfind(ctx.message.author.id) == None):
@@ -149,11 +161,49 @@ class money(commands.Cog):
     @commands.command(pass_context=True)
     @commands.cooldown(1, 60*60*24, commands.BucketType.user)
     async def daily(self, ctx):
-        r = random.randint(1,20)
-        addmoney(ctx.message.author.id, r)
-        await ctx.send(f"${r} was added to your account")
+        if balfind != None:
+            r = random.randint(1,20)
+            addmoney(ctx.message.author.id, r)
+            await ctx.send(f"${r} was added to your account")
+        else:
+            await ctx.send("You do not have an account. Do -account to make one")
 
-    @commands.command()
+    @commands.command(aliases=["stock","stonk","stocks"])
+    async def stocks(self, ctx, action = None, count = None):
+        global stock
+        global cost
+
+        user = ctx.message.author.id
+        if stockfind(user) == None:
+            await ctx.send("You need to create an account with -account first")
+        else:
+
+            stockcount = stockfind(user)
+            bal = balfind(ctx.message.author.id)
+            if action == None:
+                await ctx.send(f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks")
+            else:
+                count = int(count)
+                fcost = int(round((float(count) * cost)))
+                if count <= 0:
+                    await ctx.send("You need to enter a number that is over 0")
+                elif action == "buy" and (fcost > bal):
+                    await ctx.send("You don't have enough money")
+                elif (action == "sell") and (count > stockcount):
+                    await ctx.send("You don't own that many stocks")
+                elif action == "buy":
+                    addmoney(user, (0 - (cost * count)))
+                    addstock(user, count)
+                    await ctx.send(f"{count} stocks bought for ${fcost}")
+                elif action == "sell":
+                    addmoney(user, (cost * count))
+                    addstock(user, (0 - count))
+                    await ctx.send(f"{count} stocks sold for ${fcost}")
+
+
+
+
+    @commands.command(aliases=["ranks"])
     async def rank(self, ctx, ag1 = None, rank=None): #allows someone to buy a rank
         global ranks #idk if this is needed but it can't hurt to have it
         user = ctx.message.author.id #"user" is easier to type than "ctx.message.author.id"
@@ -174,7 +224,7 @@ class money(commands.Cog):
             val = int(ranks[rank.lower()])
             if rank == None:
                 await ctx.send("Please choose a rank to buy") #if they don't enter a rank to buy
-            elif rank.lower() not in ranks:
+            elif (rank.lower() in ranks) == False:
                 await ctx.send("That was not a valid rank") #if the rank does not appear in the ranks list (dict)
             elif canbuy(val, user) == False:
                 await ctx.send("You do not have enough money to buy this") #explains itself
@@ -188,6 +238,18 @@ class money(commands.Cog):
                 db.update({"rank": rank2}, s.urank == int(ctx.message.author.id)) #writes new rank to db
                 addmoney(user, cost) #takes the money from the account (adds a negative value)
                 await ctx.send(f"Rank {rank} was bought for ${val}") #let them know
+
+    @tasks.loop(seconds=60*20)
+    async def cost(self):
+        global cost
+        precost = round((cost * random.uniform(0.1, 2)), 3)
+        print(f"cost is {cost}")
+        if precost < 0.1:
+            cost = 0.1
+        elif precost > 100:
+            cost = 100
+        else:
+            cost = precost
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))
