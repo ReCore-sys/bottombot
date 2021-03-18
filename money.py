@@ -2,6 +2,7 @@ import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib
 from async_timeout import timeout
 from discord.ext import commands, tasks
 from tinydb import TinyDB, Query
+from yahoo_fin import stock_info as si
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 db = TinyDB(f'{filepath}/config/db.json')
@@ -67,12 +68,13 @@ def addmoney(user, amount): #Slightly less simple function to add money to a use
 #Immortal
 #Accendant
 ranks = {
-    'silver': 200,
-    'gold': 500,
-    'platinum': 1000,
-    'diamond': 3000,
-    'immortal': 5000,
-    'ascendant': 10000 #dict for ranks against price
+    'silver': 500,
+    'gold': 700,
+    'platinum': 1500,
+    'diamond': 5000,
+    'immortal': 10000,
+    'ascendant': 20000,
+    'taxman': 50000 #dict for ranks against price
     }
 rankup = {
     'silver': 'Silver',
@@ -80,7 +82,8 @@ rankup = {
     'platinum': 'Platinum',
     'diamond': 'Diamond',
     'immortal': 'Immortal',
-    'ascendant': 'Ascendant' #dict for ranks against display name
+    'ascendant': 'Ascendant',
+    'ascendant': 'Tax Man' #dict for ranks against display name
     }
 rankids = {
     'silver': 2,
@@ -88,7 +91,8 @@ rankids = {
     'platinum': 4,
     'diamond': 5,
     'immortal': 6,
-    'ascendant': 7 #rank compared to it's id. Usefule for permission levels
+    'ascendant': 7,
+    'taxman': 8 #rank compared to it's id. Usefule for permission levels
 }
 
 cost = 50 #default cost of stocks, before applying modifiers
@@ -116,6 +120,7 @@ class money(commands.Cog):
             embed.add_field(name="ID", value=f"{user.id}", inline=True)
             embed.add_field(name="Balance", value=f"${balfind(user.id)}", inline=False)
             embed.add_field(name="Rank", value=f"{rankfind(user.id)}", inline=False)
+            embed.add_field(name="Owned stocks", value=f"{stockfind(user.id)}", inline=False)
             await ctx.send(embed=embed)
 
         elif (target != None) and (balfind(ctx.message.author.id) != None): #show someone else's account if you do ping someone
@@ -126,6 +131,7 @@ class money(commands.Cog):
             embed.add_field(name="ID", value=f"{userid}", inline=True)
             embed.add_field(name="Balance", value=f"${balfind(userid)}", inline=False)
             embed.add_field(name="Rank", value=f"{rankfind(userid)}", inline=False)
+            embed.add_field(name="Owned stocks", value=f"{stockfind(userid)}", inline=False)
             await ctx.send(embed=embed)
 
 
@@ -138,7 +144,9 @@ class money(commands.Cog):
             await ctx.send("Sorry, that person either does not exist or has not set up their account.") #if that user's balance is None, they don't exist
         elif arg1.isnumeric == False: #if you try paying someone something that isn't a number
             await ctx.send("You need to give me a number")
-        elif (int(arg1) >= urval) or (urval - int(arg1) <= 0): #if either you have less than $1 or you try and pay more than you have
+        elif thrid == ctx.message.author.id: #if you try paying yourself
+            await ctx.send("You can't pay yourself")
+        elif (int(arg1) >= urval) or (urval - int(arg1) < 0): #if either you have less than $1 or you try and pay more than you have
             await ctx.send("Sorry, you don't have enough money")
         else: #if you can actually pay them
             urval = urval - int(arg1) #takes the amount from your bal
@@ -146,7 +154,7 @@ class money(commands.Cog):
             db.update({"bal": urval}, s.user == (ctx.message.author.id))
             db.update({"bal": thrval}, s.user == int(target.id)) #write changes to the db
             await ctx.send(f"${arg1} was transferred to <@!{target.id}>") #inform the person that they were paid
-            await thrid.send(f"{ctx.message.author} just payed you ${arg1}!\n({ctx.guild.name})") #send dm to target. Still not working
+            await target.send(f"{ctx.message.author} just payed you ${arg1}!\n({ctx.guild.name})") #send dm to target. Still not working
 
     @commands.command()
     async def add(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
@@ -162,7 +170,7 @@ class money(commands.Cog):
     @commands.cooldown(1, 60*60*24, commands.BucketType.user)
     async def daily(self, ctx):
         if balfind != None:
-            r = random.randint(1,20)
+            r = random.randint(20,50)
             addmoney(ctx.message.author.id, r)
             await ctx.send(f"${r} was added to your account")
         else:
@@ -199,6 +207,8 @@ class money(commands.Cog):
                     addmoney(user, fcost)
                     addstock(user, (0 - count))
                     await ctx.send(f"{count} stocks sold for ${fcost}")
+                elif action == "calc":
+                    await ctx.send(f"{count} stocks at ${cost} is worth ${round(count * cost)}")
 
 
 
@@ -210,12 +220,13 @@ class money(commands.Cog):
         if ag1 != "buy": #if they don't have "buy" as their first arg, send prices
             embed=discord.Embed(title="Ranks", description="The price of different ranks", color=0x1e00ff)
             embed.set_thumbnail(url="https://lh3.googleusercontent.com/proxy/07h14DsTB_1a1UudwyVJz7OICAz9RSOE0uLEI3ox3vFTdjvM4hJolKhXaAEk0UeSeE2V92Qgv8ScFee0Zm9GoR-VKc6EadFPwYIVw93O6-EiSvI")
-            embed.add_field(name="Silver", value="$200", inline=True)
-            embed.add_field(name="Gold", value="$500", inline=True)
-            embed.add_field(name="Platinum", value="$1000", inline=True)
-            embed.add_field(name="Diamond", value="$3000", inline=True)
-            embed.add_field(name="Immortal", value="$5000", inline=True)
-            embed.add_field(name="Ascendant", value="$10000", inline=True)
+            embed.add_field(name="Silver", value="$500", inline=True)
+            embed.add_field(name="Gold", value="$700", inline=True)
+            embed.add_field(name="Platinum", value="$1500", inline=True)
+            embed.add_field(name="Diamond", value="$5000", inline=True)
+            embed.add_field(name="Immortal", value="$10000", inline=True)
+            embed.add_field(name="Ascendant", value="$200000", inline=True)
+            embed.add_field(name="Taxman", value="$50000", inline=True)
             embed.set_footer(text='Use "-rank buy [rank name]" to buy a rank')
             await ctx.send(embed=embed)
         else: #if they do have it, start doing stuff
@@ -239,17 +250,19 @@ class money(commands.Cog):
                 addmoney(user, cost) #takes the money from the account (adds a negative value)
                 await ctx.send(f"Rank {rank} was bought for ${val}") #let them know
 
-    @tasks.loop(seconds=60*20)
+    @tasks.loop(seconds=60*10)
     async def cost(self):
         global cost
-        precost = round((cost * random.uniform(0.1, 2)), 3)
-        print(f"cost is {cost}")
-        if precost < 0.1:
-            cost = 0.1
+        stp = si.get_live_price("nktr")
+        sdiff = stp - 20
+        precost = round((sdiff * random.uniform(19.0, 21.0)), 2)
+        if precost < 1:
+            cost = 1
         elif precost > 100:
             cost = 100
         else:
             cost = precost
+        print(f"\u001b[35mstock price is ${cost}\u001b[31m")
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))

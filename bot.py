@@ -1,11 +1,10 @@
-import os, asyncio, math, random, time, better_profanity, async_cse, discord, operator, ast, datetime, urllib.parse, requests, wolframalpha, platform, cleverbotfree
-from googlesearch import search
+import os, asyncio, math, random, time, better_profanity, async_cse, discord, operator, ast, datetime, urllib.parse, requests, wolframalpha, platform
 from async_timeout import timeout
 from discord.ext import menus, commands
 from translate import Translator
 import botlib, bottomlib, money
 from pprint import pprint
-
+import cleverbotfree.cbfree
 
 #python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
 filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
@@ -110,7 +109,7 @@ async def on_message(message):
     u = message.author.id
     if (r == 9) and (message.author.id != 758912539836547132):
         if money.balfind(u) != None:
-            money.addmoney(u, 1)
+            money.addmoney(u, random.randint(1,5))
             print(f"$1 was added to {message.author}")
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
 
