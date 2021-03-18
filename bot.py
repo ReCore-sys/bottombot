@@ -16,8 +16,10 @@ null = None #so I can write "null" instead of "None" and look like hackerman
 
 
 client = discord.Client()
-
-client = commands.Bot(command_prefix = "-")
+f = open(f"{filepath}/config/prefix.txt")
+prefix = str(f.readline()) #Modular prefix
+f.close()
+client = commands.Bot(command_prefix = prefix)
 
 client.remove_command('help')
 starttime = null
@@ -34,10 +36,6 @@ async def on_ready():
         status = random.choice(["ReCore's CPU catch fire","the old gods die","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch","RealArdan on twitch"])
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
     print("\u001b[35mThe bot is up\u001b[31m")
-    channel = client.get_channel(806378599065190412) #informns two channels that the bot is up
-    await channel.send('Bot is up')
-    channel = client.get_channel(812145603848568852)
-    await channel.send('Bot is up')
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
@@ -96,6 +94,7 @@ async def on_member_join(member):
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
+        try:
             os.system(f'mkdir serversettings/{message.guild.id}')
             os.system(f"touch serversettings/{message.guild.id}/replay.txt")#this makes the relevant folders for any servers that don't already have a serversettings entry.
             if message.author != client.user:
@@ -104,6 +103,8 @@ async def on_message(message):
                     f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
                     f.write(f"\n'{pingC}' was sent by {pingU}")
                     f.close()
+        except:
+            pass
 
     r = random.randint(0,14)
     u = message.author.id
@@ -156,6 +157,12 @@ async def roll(ctx, arg1):
         await ctx.send(random.randint(1, int(arg1)))
     else:
         await ctx.send("I need a number stupid")
+
+@client.command()
+async def moneyenabled(ctx):
+    id = ctx.message.guild.id
+    print(id)
+    print(money.moneyenabled(id))
 
 @client.command()
 async def ru(ctx, *, args):
@@ -325,57 +332,63 @@ async def cf(ctx):
 @client.command()
 async def search(ctx, *, args):
     isbad2 = better_profanity.profanity.contains_profanity(args)
+    if money.ranktoid(ctx.message.author.id) >= 3:
 
-    if ((isbad2 == True) or (args in badsearch)):
-            badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
-            await ctx.send(badresponse)
-            print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
+        if ((isbad2 == True) or (args in badsearch)):
+                badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
+                await ctx.send(badresponse)
+                print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
 
-    elif (args.find("urbandictionary") == True):
-        await ctx.send("Lol no")
+        elif (args.find("urbandictionary") == True):
+            await ctx.send("Lol no")
 
-    elif "://" in args:
-        await ctx.send("You think I'm stupid? Don't answer that.")
+        elif "://" in args:
+            await ctx.send("You think I'm stupid? Don't answer that.")
 
-    if botlib.check_banned(ctx):
-        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
-        results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
-        first_result = results[0] # Grab the first result
-        if "urbandictionary" in first_result.url:
-            await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
-        else:
-            await ctx.send(f"**{first_result.title}**\n{first_result.url}")
-            await client.close()
-            f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
-            f.close()
-    else :
-        await ctx.send(botlib.nope)
+        if botlib.check_banned(ctx):
+            client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
+            results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
+            first_result = results[0] # Grab the first result
+            if "urbandictionary" in first_result.url:
+                await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+            else:
+                await ctx.send(f"**{first_result.title}**\n{first_result.url}")
+                await client.close()
+                f = open(f"{filepath}/logs.txt", "a")
+                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
+                f.close()
+        else :
+            await ctx.send(botlib.nope)
+    else:
+        await ctx.send("You don't have a high enough rank for this")
 @client.command()
 async def image(ctx,*,args):
     isbad2 = better_profanity.profanity.contains_profanity(args)
+    if money.ranktoid(ctx.message.author.id) >= 3:
 
-    if ((isbad2 == True) or (args in badsearch)):
-            badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
-            await ctx.send(badresponse)
-            print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
+        if ((isbad2 == True) or (args in badsearch)):
+                badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
+                await ctx.send(badresponse)
+                print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
-    elif botlib.check_banned(ctx):
-        client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
-        results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
-        first_result = results[0] # Grab the first result
-        if "urbandictionary" in first_result.image_url:
-            await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+        elif botlib.check_banned(ctx):
+            client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
+            results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
+            first_result = results[0] # Grab the first result
+            if "urbandictionary" in first_result.image_url:
+                await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+            else:
+                await ctx.send(f"{first_result.image_url}")
+                await client.close()
+                f = open(f"{filepath}/logs.txt", "a")
+                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
+                f.close()
+
         else:
-            await ctx.send(f"{first_result.image_url}")
-            await client.close()
-            f = open(f"{filepath}/logs.txt", "a")
-            f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
-            f.close()
-
+            await ctx.send(botlib.nope)
     else:
-        await ctx.send(botlib.nope)
+        await ctx.send("You don't have a high enough rank for this")
 
 @client.command()
 async def duck(ctx):
@@ -408,15 +421,15 @@ async def help(ctx, menu = None):
 -swap_dj / -swap <user> : Swap the current DJ to another member in the voice channel.
 -equaliser : music filters that are still under dev```""")
     elif menu == "money":
-        await ctx.send("```-account / -a / -bal / -balance [user]: Shows the bank account of the pinged user. If none pinged will show your own. \n-pay <amount> <user> : pays <amount> from your bank account into <user>. \n-rank [buy] <rank> : used to buy ranks. If none selected will show the price of the ranks. \n-daily : earns you between $1 and $20. Has a 24 hour cooldown.\n-stocks / -stock / -stonks [buy/sell] <number to buy/sell> : running without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks```\n**You will need to run -account to set up your account before doing anything else**")
+        await ctx.send("```-account / -a / -bal / -balance [user]: Shows the bank account of the pinged user. If none pinged will show your own. \n-pay <amount> <user> : pays <amount> from your bank account into <user>. \n-rank [buy] <rank> : used to buy ranks. If none selected will show the price of the ranks. \n-daily : earns you between $20 and $50. Has a 24 hour cooldown.\n-stocks / -stock / -stonks [buy/sell] <number to buy/sell or 'all'> : running without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks\neconomy <on/off> : Turns the economy functions off for the server. No data is lost so you can turn it back on later without losing anyhting. Admin only.```\n**You will need to run -account to set up your account before doing anything else**")
     else:
         await ctx.send("""**For all listed commands, [] means optional, <> means required.**\n```-bottomgear : Prints out a randomly generated bottomgear meme. Probably NSFW.
--search <query> : Does a google search for something
--image <image> : Does a google image search for something
+-search <query> : Does a google search for something. Needs rank Gold or above to use.
+-image <image> : Does a google image search for something. Needs rank Gold or above to use.
 -cf : does a coin flip
 -ru <words> : will translate something into russian
 -info : prints info about the bot
--bb <sentence> : calls the AI chatbot to respond to what you said. Is very buggy and slow. Please don't spam it.
+-bb <sentence> : calls the AI chatbot to respond to what you said. Is very buggy and slow. Please don't spam it. If it is too slow, feel free to donate $5 to speed it up. You also need rank silver or above for it.
 -rewind <number of mentions to go back>: Prints the most recent mention of anyone in the server and what was said.
 -duck : duck
 -bucketlist : prints a to-do list
