@@ -110,7 +110,7 @@ async def on_message(message):
     if (r == 9) and (message.author.id != 758912539836547132):
         if money.balfind(u) != None:
             money.addmoney(u, random.randint(1,5))
-            print(f"$1 was added to {message.author}")
+            print(f"\u001b[32m$1 was added to {message.author}\u001b[31m")
     await client.process_commands(message) #this breaks everything if removed. I don't advise it.
 
 

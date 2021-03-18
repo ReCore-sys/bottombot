@@ -1,8 +1,9 @@
-import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib
+import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib, humanfriendly
 from async_timeout import timeout
 from discord.ext import commands, tasks
 from tinydb import TinyDB, Query
-from yahoo_fin import stock_info as si
+from datetime import datetime, date, timedelta
+
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 db = TinyDB(f'{filepath}/config/db.json')
@@ -97,6 +98,7 @@ rankids = {
 
 cost = 50 #default cost of stocks, before applying modifiers
 mult = 1
+countdown = None
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -146,6 +148,8 @@ class money(commands.Cog):
             await ctx.send("You need to give me a number")
         elif thrid == ctx.message.author.id: #if you try paying yourself
             await ctx.send("You can't pay yourself")
+        elif int(arg1) < 1:
+            await ctx.send("You can't pay less than $1 to someone")
         elif (int(arg1) >= urval) or (urval - int(arg1) < 0): #if either you have less than $1 or you try and pay more than you have
             await ctx.send("Sorry, you don't have enough money")
         else: #if you can actually pay them
@@ -180,7 +184,7 @@ class money(commands.Cog):
     async def stocks(self, ctx, action = None, count = None):
         global stock
         global cost
-
+        global countdown
         user = ctx.message.author.id
         if stockfind(user) == None:
             await ctx.send("You need to create an account with -account first")
@@ -188,8 +192,9 @@ class money(commands.Cog):
 
             stockcount = stockfind(user)
             bal = balfind(ctx.message.author.id)
+            timeto = countdown - datetime.now()
             if action == None:
-                await ctx.send(f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks")
+                await ctx.send(f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}")
             else:
                 count = int(count)
                 fcost = int(round((float(count) * cost)))
@@ -250,19 +255,25 @@ class money(commands.Cog):
                 addmoney(user, cost) #takes the money from the account (adds a negative value)
                 await ctx.send(f"Rank {rank} was bought for ${val}") #let them know
 
-    @tasks.loop(seconds=60*10)
+    @tasks.loop(seconds=60*5)
     async def cost(self):
         global cost
-        stp = si.get_live_price("nktr")
-        sdiff = stp - 20
-        precost = round((sdiff * random.uniform(19.0, 21.0)), 2)
-        if precost < 1:
-            cost = 1
-        elif precost > 100:
-            cost = 100
-        else:
-            cost = precost
-        print(f"\u001b[35mstock price is ${cost}\u001b[31m")
+        global countdown
+        countdown = datetime.now() + timedelta(minutes=5)
+        try: #if it can, try use real world stocks data
+            from yahoo_fin import stock_info as si
+            stp = si.get_live_price("nktr")
+            sdiff = stp - 20
+            precost = round((sdiff * random.uniform(19.0, 21.0)), 2)
+            if precost < 1:
+                cost = 1
+            elif precost > 100:
+                cost = 100
+            else:
+                cost = precost
+        except: #otherwise just use a random number from 35 to 75
+            cost = round(random.uniform(35.0, 75.0), 2)
+        print(f"\u001b[32mstock price is ${cost}\u001b[31m")
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))
