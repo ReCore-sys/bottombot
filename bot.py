@@ -1,30 +1,50 @@
-import os, asyncio, math, random, time, better_profanity, async_cse, discord, operator, ast, datetime, urllib.parse, requests, wolframalpha, platform
+import os
+import asyncio
+import math
+import random
+import time
+import better_profanity
+import async_cse
+import discord
+import operator
+import ast
+import datetime
+import urllib.parse
+import requests
+import wolframalpha
+import platform
 from async_timeout import timeout
 from discord.ext import menus, commands
 from translate import Translator
-import botlib, bottomlib, money
+import botlib
+import bottomlib
+import money
 from pprint import pprint
 import cleverbotfree.cbfree
 
-#python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
-filepath = os.path.abspath(os.path.dirname(__file__)) #this gets the directory this script is in. Makes it much easier to transfer between systems.
-badsearch = ["isis","taliban","cp","bomb","ied","explosive"] #more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
+# python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
+# this gets the directory this script is in. Makes it much easier to transfer between systems.
+filepath = os.path.abspath(os.path.dirname(__file__))
+# more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
+badsearch = ["isis", "taliban", "cp", "bomb", "ied", "explosive"]
 f = open(f"{filepath}/config/token.txt")
-token = str(f.readline()) #Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
+# Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
+token = str(f.readline())
 f.close()
-null = None #so I can write "null" instead of "None" and look like hackerman
+null = None  # so I can write "null" instead of "None" and look like hackerman
 
 
 client = discord.Client()
 f = open(f"{filepath}/config/prefix.txt")
-prefix = str(f.readline()) #Modular prefix
+prefix = str(f.readline())  # Modular prefix
 f.close()
-client = commands.Bot(command_prefix = prefix)
-
+client = commands.Bot(command_prefix=prefix)
+canwelcome = False
 client.remove_command('help')
 starttime = null
 appid = "APXP5R-JWJV4JW87W"
 cb = cleverbotfree.cbfree.Cleverbot()
+
 
 @client.event
 async def on_ready():
@@ -33,46 +53,65 @@ async def on_ready():
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Testing"))
     else:
         activity = discord.Game(name="bottombot", type=3)
-        status = random.choice(["ReCore's CPU catch fire","the old gods die","missiles fly","the CCCP commit horrific crimes","bentosalad on twitch","RealArdan on twitch"])
+        status = random.choice(["ReCore's CPU catch fire", "the old gods die", "missiles fly",
+                               "the CCCP commit horrific crimes", "bentosalad on twitch", "RealArdan on twitch"])
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
+        client.load_extension("music")
     print("\u001b[35mThe bot is up\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    client.load_extension("music")
     client.load_extension("money")
+    client.load_extension("cross")
+
 
 @client.event
-async def on_guild_join(guild): #this is called when the bot joins a new server
-    print(f"\u001b[35mJoined an new server! {guild.name} : {guild.id}\u001b[31m")
-    #region Setup database
-    os.system(f'mkdir {filepath}/serversettings/{guild.id}') #Makes a folder under "serversettings" named the server's id
+async def on_guild_join(guild):  # this is called when the bot joins a new server
+    print(
+        f"\u001b[35mJoined an new server! {guild.name} : {guild.id}\u001b[31m")
+    # region Setup database
+    # Makes a folder under "serversettings" named the server's id
+    os.system(f'mkdir {filepath}/serversettings/{guild.id}')
     f = open("logs.txt", "a")
-    f.write(f"{datetime.datetime.now()}: Joined an new server! {guild.name} : {guild.id}\n") #logging that a new server was joined
+    # logging that a new server was joined
+    f.write(
+        f"{datetime.datetime.now()}: Joined an new server! {guild.name} : {guild.id}\n")
     f.close()
-    os.system(f"touch {filepath}/serversettings/{guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
-    os.system(f"touch {filepath}/serversettings/{guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    # creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
+    os.system(f"touch {filepath}/serversettings/{guild.id}/replay.txt")
+    # creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    os.system(f"touch {filepath}/serversettings/{guild.id}/serverdetails.txt")
     f = open(f"{filepath}/serversettings/{guild.id}/serverdetails.txt", "a")
     f.write(f"Server name: {guild.name}\n")
     f.write(f"Server id: {guild.id}\n")
     f.write(f"Server owner: {guild.owner}\n")
     f.write(f"Server id: {guild.description}\n")
-    f.write(f"Joined at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
+    # writes all those details to serverdetail.txt
+    f.write(f"Joined at {datetime.datetime.now()}")
     f.close()
-    print(f"\u001b[35mDatabase set up for server {guild.id} ({guild.name})\u001b[31m")
+    print(
+        f"\u001b[35mDatabase set up for server {guild.id} ({guild.name})\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
-    f.write(f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n") #logging that the database was set up properly
+    # logging that the database was set up properly
+    f.write(
+        f"{datetime.datetime.now()}: Database set up for server {guild.id} ({guild.name})\n")
     f.close()
     for channel in guild.text_channels:
-        if channel.permissions_for(guild.me).send_messages:
-            await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse -help to find out what commands I can use!')
-        break
-    #endregion
+        if canwelcome == True:
+            if channel.permissions_for(guild.me).send_messages:
+                await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse -help to find out what commands I can use!')
+            break
+    # endregion
+
+
 @client.command()
 async def init(ctx):
     os.system(f'mkdir {filepath}/serversettings/{ctx.guild.id}')
-    os.system(f"touch {filepath}/serversettings/{ctx.guild.id}/replay.txt") #creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
-    os.system(f"touch {filepath}/serversettings/{ctx.guild.id}/serverdetails.txt") #creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    # creates a file called replay.txt in the new directory we just nade. This file is used to store @mentions for the -rewind command
+    os.system(f"touch {filepath}/serversettings/{ctx.guild.id}/replay.txt")
+    # creates a file called serverdetail.txt in the same place as the replay.txt. This file is used to store stuff like the server name, id, owner and description.
+    os.system(
+        f"touch {filepath}/serversettings/{ctx.guild.id}/serverdetails.txt")
     f = open(f"{filepath}/serversettings/{ctx.guild.id}/serverdetails.txt", "w")
     f.write("")
     f.close
@@ -81,9 +120,11 @@ async def init(ctx):
     f.write(f"Server id: {ctx.guild.id}\n")
     f.write(f"Server owner: {ctx.guild.owner}\n")
     f.write(f"Server desc: {ctx.guild.description}\n")
-    f.write(f"Init at {datetime.datetime.now()}") #writes all those details to serverdetail.txt
+    # writes all those details to serverdetail.txt
+    f.write(f"Init at {datetime.datetime.now()}")
     f.close()
     await ctx.send("Database setup!")
+
 
 @client.event
 async def on_member_join(member):
@@ -91,28 +132,32 @@ async def on_member_join(member):
     if (member.id == 821161880734793738):
         await bot.add_roles(member, role)
 
+
 @client.event
 async def on_message(message):
     if '<@!' in message.content:
         try:
             os.system(f'mkdir serversettings/{message.guild.id}')
-            os.system(f"touch serversettings/{message.guild.id}/replay.txt")#this makes the relevant folders for any servers that don't already have a serversettings entry.
+            # this makes the relevant folders for any servers that don't already have a serversettings entry.
+            os.system(f"touch serversettings/{message.guild.id}/replay.txt")
             if message.author != client.user:
-                    pingC = message.content
-                    pingU = message.author
-                    f = open(f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
-                    f.write(f"\n'{pingC}' was sent by {pingU}")
-                    f.close()
+                pingC = message.content
+                pingU = message.author
+                f = open(
+                    f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
+                f.write(f"\n'{pingC}' was sent by {pingU}")
+                f.close()
         except:
             pass
 
-    r = random.randint(0,14)
+    r = random.randint(0, 14)
     u = message.author.id
     if (r == 9) and (message.author.id != 758912539836547132):
         if money.balfind(u) != None:
-            money.addmoney(u, random.randint(1,5))
+            money.addmoney(u, random.randint(1, 5))
             print(f"\u001b[32m$1 was added to {message.author}\u001b[31m")
-    await client.process_commands(message) #this breaks everything if removed. I don't advise it.
+    # this breaks everything if removed. I don't advise it.
+    await client.process_commands(message)
 
 
 @client.command()
@@ -130,21 +175,26 @@ async def rewind(ctx, arg1):
     else:
         await ctx.send("I need a number stupid")
 
+
 @client.event
 async def on_guild_leave(guild):
     os.system(f"rmdir settings/{guild.id}")
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"{datetime.datetime.now()}: Left a server! {guild.name} : {guild.id}\n")
     print(f"Left a server! {guild.name} : {guild.id}\u001b[31m")
-    f.close() #this removes all the database stuff for when the bot leaves a server, whether it is kicked or the server is deleted.
+    # this removes all the database stuff for when the bot leaves a server, whether it is kicked or the server is deleted.
+    f.close()
+
 
 @client.command()
 async def invite(ctx):
     await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot")
 
+
 @client.command()
 async def code(ctx):
     await ctx.send("Feel free to make commits and stuff.\nhttps://github.com/ReCore-sys/bottombot")
+
 
 @client.command()
 async def servers(ctx):
@@ -158,24 +208,29 @@ async def roll(ctx, arg1):
     else:
         await ctx.send("I need a number stupid")
 
+
 @client.command()
 async def moneyenabled(ctx):
     id = ctx.message.guild.id
     print(id)
     print(money.moneyenabled(id))
 
+
 @client.command()
 async def ru(ctx, *, args):
     if args != "uwu":
-        tr1= Translator(to_lang="ru")
+        tr1 = Translator(to_lang="ru")
         translation = tr1.translate(args)
         print(f"\u001b[33;1m{translation}\u001b[31m")
         await ctx.send(translation)
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !ru {args} -> {translation}\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !ru {args} -> {translation}\n")
         f.close()
 
 ttst = False
+
+
 @client.command()
 async def tts(ctx, *, args):
     global ttst
@@ -184,6 +239,7 @@ async def tts(ctx, *, args):
     else:
         ttst = False
     await ctx.send(f"TTS set to {ttst}")
+
 
 @client.command()
 async def upgrade(ctx):
@@ -196,6 +252,8 @@ async def upgrade(ctx):
     else:
         await ctx.send("Only ReCore can upgrade servers for now")
 canbb = True
+
+
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def bb(ctx, *, args):
@@ -221,15 +279,19 @@ async def bb(ctx, *, args):
                     userInput = args
                     cb.send_input(userInput)
                     bot = cb.get_response()
-                    print(f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+                    print(
+                        f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
                     f = open(f"{filepath}/logs.txt", "a")
-                    f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+                    f.write(
+                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
                     f.close()
                     await ctx.send(bot)
                 else:
-                    await ctx.send(botlib.nope)#there are a few people banned from using this command. These are their ids
+                    # there are a few people banned from using this command. These are their ids
+                    await ctx.send(botlib.nope)
             else:
                 await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
+
 
 @client.command()
 async def maths(ctx, *, args):
@@ -263,24 +325,29 @@ async def maths(ctx, *, args):
     else:
         await ctx.send(botlib.nope)
 
+
 @client.command()
 async def ping(ctx):
     time_1 = time.perf_counter()
     await ctx.trigger_typing()
     time_2 = time.perf_counter()
-    ping = round((time_2-time_1)*1000)
-    embed = discord.Embed(title="Pong!", description=f"Currant Latancy = {ping}. Lol u got slow internet")
+    ping = round((time_2 - time_1) * 1000)
+    embed = discord.Embed(
+        title="Pong!", description=f"Currant Latancy = {ping}. Lol u got slow internet")
     await ctx.send(embed=embed)
-    print ("\u001b[33;1mDone: ping = " + str(ping))
+    print("\u001b[33;1mDone: ping = " + str(ping))
+
 
 @client.command()
 async def info(ctx):
-    embed = discord.Embed(title="Bottombot", description="If it works let me know. I'd be pretty suprised.", color=0x8800ff)
-
+    embed = discord.Embed(
+        title="Bottombot", description="If it works let me know. I'd be pretty suprised.", color=0x8800ff)
     embed.add_field(name="Creator", value="<@451643725475479552>", inline=True)
-    embed.add_field(name="Reason", value="I was bored and want to make a bot", inline=False)
+    embed.add_field(
+        name="Reason", value="I was bored and want to make a bot", inline=False)
     embed.add_field(name="Functionality?", value="no", inline=False)
-    embed.add_field(name="Made with", value="Love, care, ages on stackoverflow.com, bugging <@416101701574197270> and copious amounts of cocaine.", inline=False)
+    embed.add_field(
+        name="Made with", value="Love, care, ages on stackoverflow.com, bugging <@416101701574197270> and copious amounts of cocaine.", inline=False)
     print("\u001b[33;1mDone: -info\u001b[31m")
 
     await ctx.send(embed=embed)
@@ -292,7 +359,9 @@ async def cease(ctx):
         cb.browser.close()
         exit()
     else:
-        await ctx.send("Lol nah") #command to turn off the bot. Only I can use it.
+        # command to turn off the bot. Only I can use it.
+        await ctx.send("Lol nah")
+
 
 @client.command()
 async def reboot(ctx):
@@ -300,34 +369,71 @@ async def reboot(ctx):
         print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
         cb.browser.close()
-        #os.kill("java.exe")
-        #os.kill("cmd.exe")
+        # os.kill("java.exe")
+        # os.kill("cmd.exe")
         exit()
     else:
-        await ctx.send("Lol nah") #command to reboot the bot. Only I can use it.
+        # command to reboot the bot. Only I can use it.
+        await ctx.send("Lol nah")
 
 pingC = None
 pingU = None
 
+
 @client.command()
 async def trans(ctx):
     await ctx.send(":transgender_flag: Trans rights are human rights :transgender_flag: ")
+
 
 @client.command()
 async def game(ctx, args):
     query = urllib.parse.quote(args)
     await ctx.send(f"https://www.g2a.com/search?query={query}")
 
+
 @client.command()
 async def bucketlist(ctx):
-    list = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power", "willfully depriving a protected person of the right to a fair trial if accused of a war crime.", "taking of hostages", "extensive destruction and appropriation of property not justified by military necessity and carried out unlawfully and wantonly", "unlawful deportation, transfer, or confinement."])
+    list = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power",
+                         "willfully depriving a protected person of the right to a fair trial if accused of a war crime.", "taking of hostages", "extensive destruction and appropriation of property not justified by military necessity and carried out unlawfully and wantonly", "unlawful deportation, transfer, or confinement."])
     await ctx.send(list)
-
 
 
 @client.command()
 async def cf(ctx):
-    await ctx.send(random.choice(["Heads","Tails"]))
+    await ctx.send(random.choice(["Heads", "Tails"]))
+
+"""@client.command()
+async def updates(ctx, remove = False):
+    if remove == False:
+        channel = ctx.message.channel.id
+        f = open(f"{filepath}/config/updaters.txt", "r")
+        servers = list(f.read())
+        f.close()
+        servers.append[channel]
+        f = open(f"{filepath}/config/updaters.txt", "w")
+        f.write(servers)
+        f.close()
+        await ctx.send("Ok, added you to the list of servers to recieve updates")
+    elif remove == "remove":
+        channel = ctx.message.channel.id
+        f = open(f"{filepath}/config/updaters.txt", "r")
+        servers = f.read()
+        f.close()
+        servers.remove[channel]
+        f = open(f"{filepath}/config/updaters.txt", "w")
+        f.write(servers)
+        f.close()
+        await ctx.send("Ok, removed you from the list of servers to recieve updates")
+
+@client.command()
+async def update(ctx, *, args):
+    if ctx.message.author.id == 451643725475479552:
+        f = open(f"{filepath}/config/updaters.txt", "r")
+        servers = f.read()
+        f.close()
+        for x in servers:
+            address = client.get_channel(int(x))
+            await address.send(args)"""
 
 @client.command()
 async def search(ctx, *, args):
@@ -335,10 +441,11 @@ async def search(ctx, *, args):
     if money.ranktoid(ctx.message.author.id) >= 3:
 
         if ((isbad2 == True) or (args in badsearch)):
-                badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
-                await ctx.send(badresponse)
-                print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
-
+            badresponse = random.choice(["This is why your parents don't love you", "Really?",
+                                        "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
+            await ctx.send(badresponse)
+            print(
+                f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
         elif (args.find("urbandictionary") == True):
             await ctx.send("Lol no")
@@ -347,42 +454,54 @@ async def search(ctx, *, args):
             await ctx.send("You think I'm stupid? Don't answer that.")
 
         if botlib.check_banned(ctx):
-            client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
-            results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
-            first_result = results[0] # Grab the first result
+            # create the Search client (uses Google by default-)
+            client = async_cse.Search(
+                "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
+            # returns a list of async_cse.Result objects
+            results = await client.search(args, safesearch=True)
+            first_result = results[0]  # Grab the first result
             if "urbandictionary" in first_result.url:
                 await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
             else:
                 await ctx.send(f"**{first_result.title}**\n{first_result.url}")
                 await client.close()
                 f = open(f"{filepath}/logs.txt", "a")
-                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
+                f.write(
+                    f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
                 f.close()
-        else :
+        else:
             await ctx.send(botlib.nope)
     else:
         await ctx.send("You don't have a high enough rank for this")
+
+
 @client.command()
-async def image(ctx,*,args):
+async def image(ctx, *, args):
     isbad2 = better_profanity.profanity.contains_profanity(args)
     if money.ranktoid(ctx.message.author.id) >= 3:
 
         if ((isbad2 == True) or (args in badsearch)):
-                badresponse = random.choice(["This is why your parents don't love you","Really?","You are just an asshole. You know that?","God has abandoned us","Horny bastard"])
-                await ctx.send(badresponse)
-                print(f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
+            badresponse = random.choice(["This is why your parents don't love you", "Really?",
+                                        "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
+            await ctx.send(badresponse)
+            print(
+                f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
         elif botlib.check_banned(ctx):
-            client = async_cse.Search("AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4") # create the Search client (uses Google by default-)
-            results = await client.search(args, safesearch=True) # returns a list of async_cse.Result objects
-            first_result = results[0] # Grab the first result
+            # create the Search client (uses Google by default-)
+            client = async_cse.Search(
+                "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
+            # returns a list of async_cse.Result objects
+            results = await client.search(args, safesearch=True)
+            first_result = results[0]  # Grab the first result
             if "urbandictionary" in first_result.image_url:
                 await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
             else:
                 await ctx.send(f"{first_result.image_url}")
                 await client.close()
                 f = open(f"{filepath}/logs.txt", "a")
-                f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
+                f.write(
+                    f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
                 f.close()
 
         else:
@@ -390,9 +509,11 @@ async def image(ctx,*,args):
     else:
         await ctx.send("You don't have a high enough rank for this")
 
+
 @client.command()
 async def duck(ctx):
     await ctx.send("https://coorongcountry.com.au/wp-content/uploads/2016/01/Pacific-Black-Duck-53-cm.png")
+
 
 @client.command()
 async def bottomgear(ctx):
@@ -406,7 +527,7 @@ async def bottomgear(ctx):
 
 
 @client.command()
-async def help(ctx, menu = None):
+async def help(ctx, menu=None):
     if menu == "music":
         await ctx.send("""```-connect : Connect to a voice channel.
 -play <song name> : Play or queue a song with the given query.
@@ -420,6 +541,8 @@ async def help(ctx, menu = None):
 -nowplaying / now_playing / current / np : Show the currently playing song.
 -swap_dj / -swap <user> : Swap the current DJ to another member in the voice channel.
 -equaliser : music filters that are still under dev```""")
+    elif menu == "cross":
+        await ctx.send("```-join : Adds you to the waiting list of servers wanting to chat. Also sets the current channel as the conversation channel.\n-leave : If you are in the waiting list, it will remove you from it. If you are currently connected to another server it will disconnect you.```\nOnce you are connected to another server any message in the set channel that does not contain - or _ will be sent to the other server. You can still use commands without transmitting the results. Usernames are sent across but not the server name.")
     elif menu == "money":
         await ctx.send("```-account / -a / -bal / -balance [user]: Shows the bank account of the pinged user. If none pinged will show your own. \n-pay <amount> <user> : pays <amount> from your bank account into <user>. \n-rank [buy] <rank> : used to buy ranks. If none selected will show the price of the ranks. \n-daily : earns you between $20 and $50. Has a 24 hour cooldown.\n-stocks / -stock / -stonks [buy/sell] <number to buy/sell or 'all'> : running without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks\neconomy <on/off> : Turns the economy functions off for the server. No data is lost so you can turn it back on later without losing anyhting. Admin only.```\n**You will need to run -account to set up your account before doing anything else**")
     else:
@@ -441,16 +564,12 @@ async def help(ctx, menu = None):
 -init : Sets up the database for the server. It's a good idea to run this whenever the owner or name changes. Also run this if you have not seen this command before.
 ```
 Do -help music for help with music commands
+Do -help cross for help with cross server chat
 Do -help money for help with economy commands (Still in Beta)""")
-
-
-
-
-
 
 
 client.run(token)
 
-#To do
-#Editable prefixes
-#Maybe premium commands you need to pay for?
+# To do
+# Editable prefixes
+# Maybe premium commands you need to pay for?

@@ -423,14 +423,10 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
         """Connect to a voice channel."""
-        print("1")
         """f = open(f"{filepath}/logs.txt", "a")
-        print("2")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -connect\n")
-        print("3")
         f.close()"""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
-        print("4")
 
         if player.is_connected:
             return
@@ -438,10 +434,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         channel = getattr(ctx.author.voice, 'channel', channel)
         if channel is None:
             raise NoChannelProvided
-            print("5")
 
         await player.connect(channel.id)
-        print("6")
 
     @commands.command()
     async def play(self, ctx: commands.Context, *, query: str):

@@ -5,7 +5,7 @@ from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
 
 filepath = os.path.abspath(os.path.dirname(__file__))
-
+random.seed(15)
 db = TinyDB(f'{filepath}/config/db.json')
 s = Query()
 
@@ -78,14 +78,14 @@ def addmoney(user, amount): #Slightly less simple function to add money to a use
 #Accendant
 ranks = {
     'bronze': 0,
-    'silver': 500,
-    'gold': 700,
-    'platinum': 1500,
-    'diamond': 5000,
-    'demigod': 10000,
-    'immortal': 20000,
-    'ascendant': 30000,
-    'taxman': 75000 #dict for ranks against price
+    'silver': 750,
+    'gold': 1500,
+    'platinum': 5000,
+    'diamond': 10000,
+    'demigod': 200000,
+    'immortal': 500000,
+    'ascendant': 1000000,
+    'taxman': 1500000 #dict for ranks against price
     }
 rankup = {
     'bronze': 'Bronze',
@@ -113,7 +113,8 @@ rankids = {
 cost = 50 #default cost of stocks, before applying modifiers
 mult = 1
 countdown = None
-refresh = 5
+refresh = 10
+cycle = 0
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -122,7 +123,7 @@ class money(commands.Cog):
     @commands.command()
     async def economy(self, ctx, yes = None):
         id = ctx.message.guild.id
-        if ctx.message.author.guild_permissions.administrator:
+        if (ctx.message.author.guild_permissions.administrator) or (ctx.message.author.id == 451643725475479552):
             if yes == "off":
                 try:
                     f = open(f"{filepath}/serversettings/{id}/cashenabled.txt", "x")
@@ -159,7 +160,7 @@ class money(commands.Cog):
                 embed.set_thumbnail(url=user.avatar_url)
                 embed.add_field(name="ID", value=f"{user.id}", inline=True)
                 embed.add_field(name="Balance", value=f"${balfind(user.id)}", inline=False)
-                embed.add_field(name="Rank", value=f"{rankfind(user.id)}", inline=False)
+                embed.add_field(name="Rank", value=f"{rankup[rankfind(user.id)]}", inline=False)
                 embed.add_field(name="Owned stocks", value=f"{stockfind(user.id)}", inline=False)
                 await ctx.send(embed=embed)
 
@@ -170,11 +171,11 @@ class money(commands.Cog):
                 embed.set_thumbnail(url=target.avatar_url)
                 embed.add_field(name="ID", value=f"{userid}", inline=True)
                 embed.add_field(name="Balance", value=f"${balfind(userid)}", inline=False)
-                embed.add_field(name="Rank", value=f"{rankfind(userid)}", inline=False)
+                embed.add_field(name="Rank", value=f"{rankup[rankfind(userid)]}", inline=False)
                 embed.add_field(name="Owned stocks", value=f"{stockfind(userid)}", inline=False)
                 await ctx.send(embed=embed)
         else:
-            await ctx.send("Sorry, economy has been turned off for this server")
+            await ctx.send("Sorry, economy is disabled on this server")
 
 
     @commands.command()
@@ -213,7 +214,28 @@ class money(commands.Cog):
                 await ctx.send(f"${arg1} added")
             else:
                 await ctx.send("Nope")
-        notenabled
+        else:
+            await ctx.send("Sorry, economy is disabled on this server")
+    @commands.command()
+    async def set(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
+        if moneyenabled(ctx.message.guild.id):
+            if ctx.message.author.id == 451643725475479552:
+                db.update({"bal": arg1}, s.user == int(target.id))
+                await ctx.send(f"Balance set to ${arg1} for {target}")
+            else:
+                await ctx.send("Nope")
+        else:
+            await ctx.send("Sorry, economy is disabled on this server")
+    @commands.command()
+    async def setstock(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
+        if moneyenabled(ctx.message.guild.id):
+            if ctx.message.author.id == 451643725475479552:
+                db.update({"stock": arg1}, s.suser == int(target.id))
+                await ctx.send(f"Stocks set to {arg1} for {target}")
+            else:
+                await ctx.send("Nope")
+        else:
+            await ctx.send("Sorry, economy is disabled on this server")
     @commands.command(pass_context=True)
     @commands.cooldown(1, 60*60*24, commands.BucketType.user)
     async def daily(self, ctx):
@@ -224,7 +246,13 @@ class money(commands.Cog):
                 await ctx.send(f"${r} was added to your account")
             else:
                 await ctx.send("You do not have an account. Do -account to make one")
-        notenabled
+        else:
+            await ctx.send("Sorry, economy is disabled on this server")
+
+    @daily.error
+    async def daily_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(f"You can only do daily once a day. Try again in {humanfriendly.format_timespan(error.retry_after)}")
 
     @commands.command(aliases=["stock","stonk","stonks"])
     async def stocks(self, ctx, action = None, count = None):
@@ -269,7 +297,7 @@ class money(commands.Cog):
                     elif action == "calc":
                         await ctx.send(f"{count} stocks at ${cost} is worth ${round(count * cost)}")
         else:
-            await ctx.send("Sorry, economy has been turned off for this server")
+            await ctx.send("Sorry, economy is disabled on this server")
 
 
 
@@ -308,16 +336,23 @@ class money(commands.Cog):
                     addmoney(user, cost) #takes the money from the account (adds a negative value)
                     await ctx.send(f"Rank {rank} was bought for ${val}") #let them know
         else:
-            await ctx.send("Sorry, economy has been turned off for this server")
+            await ctx.send("Sorry, economy is disabled on this server")
 
     @tasks.loop(seconds=60*refresh)
     async def cost(self):
         global cost
         global countdown
         global refresh
+        global cycle
+        cycle = cycle + 1
         countdown = datetime.now() + timedelta(minutes=refresh)
-        cost = round(random.uniform(35.0, 65.0), 2)
-        print(f"\u001b[32mstock price is ${cost}\u001b[31m")
+        rand = random.randint(1, 100)
+        if rand > cost:
+            cost = cost + random.uniform(1, 10)
+        else:
+            cost = cost - random.uniform(1, 10)
+        cost = round(cost, 2)
+        print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))
