@@ -40,7 +40,7 @@ Far too many sleepless nights resulted in the following:
  ## How you can help
 
  ### Financial support
-	 Got a spare $5? I am very happy to lighten up your wallet. But for real, this isn't cheap. I have a $120 raspberry pi to pay off and I don't want the chatbot nuking my CPU every time someone tries to use it.
+Got a spare $5? I am very happy to lighten up your wallet. But for real, this isn't cheap. I have a $120 raspberry pi to pay off and I don't want the chatbot nuking my CPU every time someone tries to use it.
 
  ### Coding help
    Got any experience with the dark arts of Python? If so, I would love your help. Feel free to make pull requests or whatever on the GitHub, or hit me up on Discord if you want to have a more ongoing contribution. What do you get for helping? A warm fuzzy feeling I guess.
