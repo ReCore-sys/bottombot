@@ -589,6 +589,9 @@ async def help(ctx, menu=None):
 -servers : Shows how many servers the bot is in
 -code : gets the link for the github so you can see what goes on under the hood
 -init : Sets up the database for the server. It's a good idea to run this whenever the owner or name changes. Also run this if you have not seen this command before.
+-pussy: gets an image of some sweet pussy
+-fox : Foxes are hella cute
+-dog : Dog
 ```
 Do -help music for help with music commands
 Do -help cross for help with cross server chat
