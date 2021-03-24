@@ -348,11 +348,12 @@ class money(commands.Cog):
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
         if rand > cost:
-            cost = cost + random.uniform(1, 10)
+            cost = cost + random.uniform(1, 2)
         else:
-            cost = cost - random.uniform(1, 10)
+            cost = cost - random.uniform(1, 2)
         cost = round(cost, 2)
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
+        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"Stock price at ${cost}"))
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))

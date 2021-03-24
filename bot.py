@@ -215,6 +215,33 @@ async def moneyenabled(ctx):
     print(id)
     print(money.moneyenabled(id))
 
+@client.command()
+async def fox(ctx):
+    await ctx.send(f"https://randomfox.ca/images/{random.randint(1,122)}.jpg")
+
+@client.command()
+async def pussy(ctx):
+    while True:
+        URL = "https://aws.random.cat/meow"
+        r = requests.get(url = URL)
+        t = r.json()
+        if ".mp4" in t["file"]:
+            pass
+        else:
+            break
+    await ctx.send(t["file"])
+@client.command()
+async def dog(ctx):
+    URL = "https://random.dog/woof.json"
+    r = requests.get(url = URL)
+    t = r.json()
+    await ctx.send(t["url"])
+@client.command()
+async def xkcd(ctx):
+    URL = f"https://xkcd.com/{random.randint(1,2400)}/info.0.json"
+    r = requests.get(url = URL)
+    t = r.json()
+    await ctx.send(t["img"])
 
 @client.command()
 async def ru(ctx, *, args):
