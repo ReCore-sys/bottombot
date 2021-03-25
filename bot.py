@@ -21,6 +21,8 @@ import bottomlib
 import money
 from pprint import pprint
 import cleverbotfree.cbfree
+import json
+import settings
 
 # python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
@@ -63,6 +65,7 @@ async def on_ready():
     f.close()
     client.load_extension("money")
     client.load_extension("cross")
+    client.load_extension("modules")
 
 
 @client.event
@@ -101,6 +104,12 @@ async def on_guild_join(guild):  # this is called when the bot joins a new serve
             if channel.permissions_for(guild.me).send_messages:
                 await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse -help to find out what commands I can use!')
             break
+    f = open(f"{filepath}/template.json", "r")
+    dict = f.read()
+    f.close()
+    f = open(f"{filepath}/serversettings/{guild.id}/settings.json", "w")
+    f.write(dict)
+    f.close()
     # endregion
 
 
@@ -123,6 +132,13 @@ async def init(ctx):
     # writes all those details to serverdetail.txt
     f.write(f"Init at {datetime.datetime.now()}")
     f.close()
+    if os.path.isfile(f'{filepath}/serversettings/{ctx.guild.id}/settings.json') == False:
+        f = open(f"{filepath}/template.json", "r")
+        v = json.loads(f.read())
+        f.close()
+        f = open(f"{filepath}/serversettings/{ctx.guild.id}/settings.json", "w")
+        f.write(json.dumps(v))
+        f.close()
     await ctx.send("Database setup!")
 
 
@@ -285,39 +301,42 @@ canbb = True
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def bb(ctx, *, args):
     global ttst
-    async with ctx.channel.typing():
-        if canbb == False:
-            await ctx.send("No, fuck off")
-        else:
-            ctx.message.channel.typing()
-            if money.ranktoid(ctx.message.author.id) >= 2:
-                if botlib.check_banned:
-                    try:
-                        cb.browser.get(cb.url)
-                    except:
-                        print("There was an error so we exited")
-                        await ctx.send("Something isn't working right")
-                        cb.browser.close()
-                    try:
-                        cb.get_form()
-                    except:
-                        print("There was an error so we exited")
-                        await ctx.send("Something isn't working right")
-                    userInput = args
-                    cb.send_input(userInput)
-                    bot = cb.get_response()
-                    print(
-                        f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
-                    f = open(f"{filepath}/logs.txt", "a")
-                    f.write(
-                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
-                    f.close()
-                    await ctx.send(bot)
-                else:
-                    # there are a few people banned from using this command. These are their ids
-                    await ctx.send(botlib.nope)
+    if settings.check(ctx.message.guild.id, "get", "bb"):
+        async with ctx.channel.typing():
+            if canbb == False:
+                await ctx.send("No, fuck off")
             else:
-                await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
+                ctx.message.channel.typing()
+                if money.ranktoid(ctx.message.author.id) >= 2:
+                    if botlib.check_banned:
+                        try:
+                            cb.browser.get(cb.url)
+                        except:
+                            print("There was an error so we exited")
+                            await ctx.send("Something isn't working right")
+                            cb.browser.close()
+                        try:
+                            cb.get_form()
+                        except:
+                            print("There was an error so we exited")
+                            await ctx.send("Something isn't working right")
+                        userInput = args
+                        cb.send_input(userInput)
+                        bot = cb.get_response()
+                        print(
+                            f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+                        f = open(f"{filepath}/logs.txt", "a")
+                        f.write(
+                            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+                        f.close()
+                        await ctx.send(bot)
+                    else:
+                        # there are a few people banned from using this command. These are their ids
+                        await ctx.send(botlib.nope)
+                else:
+                    await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
+    else:
+        await ctx.send("Sorry, the chatbot is disabled for this server")
 
 
 @client.command()
@@ -464,77 +483,83 @@ async def update(ctx, *, args):
 
 @client.command()
 async def search(ctx, *, args):
-    isbad2 = better_profanity.profanity.contains_profanity(args)
-    if money.ranktoid(ctx.message.author.id) >= 3:
+    if settings.check(ctx.message.guild.id, "get", "search"):
+        isbad2 = better_profanity.profanity.contains_profanity(args)
+        if money.ranktoid(ctx.message.author.id) >= 3:
 
-        if ((isbad2 == True) or (args in badsearch)):
-            badresponse = random.choice(["This is why your parents don't love you", "Really?",
-                                        "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
-            await ctx.send(badresponse)
-            print(
-                f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
+            if ((isbad2 == True) or (args in badsearch)):
+                badresponse = random.choice(["This is why your parents don't love you", "Really?",
+                                            "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
+                await ctx.send(badresponse)
+                print(
+                    f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
-        elif (args.find("urbandictionary") == True):
-            await ctx.send("Lol no")
+            elif (args.find("urbandictionary") == True):
+                await ctx.send("Lol no")
 
-        elif "://" in args:
-            await ctx.send("You think I'm stupid? Don't answer that.")
+            elif "://" in args:
+                await ctx.send("You think I'm stupid? Don't answer that.")
 
-        if botlib.check_banned(ctx):
-            # create the Search client (uses Google by default-)
-            client = async_cse.Search(
-                "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
-            # returns a list of async_cse.Result objects
-            results = await client.search(args, safesearch=True)
-            first_result = results[0]  # Grab the first result
-            if "urbandictionary" in first_result.url:
-                await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+            if botlib.check_banned(ctx):
+                # create the Search client (uses Google by default-)
+                client = async_cse.Search(
+                    "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
+                # returns a list of async_cse.Result objects
+                results = await client.search(args, safesearch=True)
+                first_result = results[0]  # Grab the first result
+                if "urbandictionary" in first_result.url:
+                    await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+                else:
+                    await ctx.send(f"**{first_result.title}**\n{first_result.url}")
+                    await client.close()
+                    f = open(f"{filepath}/logs.txt", "a")
+                    f.write(
+                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
+                    f.close()
             else:
-                await ctx.send(f"**{first_result.title}**\n{first_result.url}")
-                await client.close()
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(
-                    f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {args} -> {first_result.url}\n")
-                f.close()
+                await ctx.send(botlib.nope)
         else:
-            await ctx.send(botlib.nope)
+            await ctx.send("You don't have a high enough rank for this")
     else:
-        await ctx.send("You don't have a high enough rank for this")
+        await ctx.send("Sorry, searches are disabled for this server")
 
 
 @client.command()
 async def image(ctx, *, args):
-    isbad2 = better_profanity.profanity.contains_profanity(args)
-    if money.ranktoid(ctx.message.author.id) >= 3:
+    if settings.check(ctx.message.guild.id, "get", "image"):
+        isbad2 = better_profanity.profanity.contains_profanity(args)
+        if money.ranktoid(ctx.message.author.id) >= 3:
 
-        if ((isbad2 == True) or (args in badsearch)):
-            badresponse = random.choice(["This is why your parents don't love you", "Really?",
-                                        "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
-            await ctx.send(badresponse)
-            print(
-                f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
+            if ((isbad2 == True) or (args in badsearch)):
+                badresponse = random.choice(["This is why your parents don't love you", "Really?",
+                                            "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
+                await ctx.send(badresponse)
+                print(
+                    f"\u001b[33;1m{ctx.message.author} tried to search '{args}'\u001b[31m")
 
-        elif botlib.check_banned(ctx):
-            # create the Search client (uses Google by default-)
-            client = async_cse.Search(
-                "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
-            # returns a list of async_cse.Result objects
-            results = await client.search(args, safesearch=True)
-            first_result = results[0]  # Grab the first result
-            if "urbandictionary" in first_result.image_url:
-                await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+            elif botlib.check_banned(ctx):
+                # create the Search client (uses Google by default-)
+                client = async_cse.Search(
+                    "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
+                # returns a list of async_cse.Result objects
+                results = await client.search(args, safesearch=True)
+                first_result = results[0]  # Grab the first result
+                if "urbandictionary" in first_result.image_url:
+                    await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+                else:
+                    await ctx.send(f"{first_result.image_url}")
+                    await client.close()
+                    f = open(f"{filepath}/logs.txt", "a")
+                    f.write(
+                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
+                    f.close()
+
             else:
-                await ctx.send(f"{first_result.image_url}")
-                await client.close()
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(
-                    f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {args} -> {first_result.image_url}\n")
-                f.close()
-
+                await ctx.send(botlib.nope)
         else:
-            await ctx.send(botlib.nope)
+            await ctx.send("You don't have a high enough rank for this")
     else:
-        await ctx.send("You don't have a high enough rank for this")
+        await ctx.send("Sorry, image searches are disabled for this server")
 
 
 @client.command()
@@ -592,6 +617,7 @@ async def help(ctx, menu=None):
 -pussy: gets an image of some sweet pussy
 -fox : Foxes are hella cute
 -dog : Dog
+-mod / module / modules: allows admins to enable and disable some parts of the bot. You will need to run -init for it to work
 ```
 Do -help music for help with music commands
 Do -help cross for help with cross server chat
