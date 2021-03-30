@@ -1,11 +1,13 @@
-import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib, humanfriendly, settings
+import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib, humanfriendly
 from async_timeout import timeout
 from discord.ext import commands, tasks
 from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
 
+seedspam = (random.randint(1,100))
+
 filepath = os.path.abspath(os.path.dirname(__file__))
-random.seed(15)
+random.seed(seedspam)
 db = TinyDB(f'{filepath}/config/db.json')
 s = Query()
 
@@ -17,7 +19,7 @@ def stockfind(dbid): #function to find how many stock a person owns
         val = re[0]
         return val['stock']
     except:
-        print("This user does not exist 1")
+        print("This user does not exist")
 
 def moneyenabled(id):
     if os.path.isfile(f"{filepath}/serversettings/{id}/cashenabled.txt") == True:
@@ -26,11 +28,11 @@ def moneyenabled(id):
         return True
 
 def addstock(user, amount): #Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
-    val = stockfind(int(user))
+    val = stockfind(user)
     try:
         val = val + amount
     except:
-        print("User does not exist 2")
+        print("User does not exist")
     db.update({"stock": val}, s.suser == user)
 
 def balfind(dbid): #function to find the balance of the id dbid
@@ -61,68 +63,99 @@ def canbuy(price, id): #simple function to check if a user can buy something. Pr
     else:
         return False
 def addmoney(user, amount): #Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
-    val = balfind(int(user))
+    val = balfind(user)
     try:
         val = val + amount
     except:
-        print("User does not exist 3")
+        print("User does not exist")
     db.update({"bal": val}, s.user == user)
 
 #rank tiering
+#poor
 #Bronze
 #Silver
 #Gold
 #Platinum
 #Diamond
+#goldfinger
 #Immortal
 #Accendant
+#taxman
 ranks = {
-    'bronze': 0,
+    'poor':0,
+    'bronze': 100,
     'silver': 750,
     'gold': 1500,
     'platinum': 5000,
     'diamond': 10000,
+    'goldfinger':150000,
     'demigod': 200000,
     'immortal': 500000,
     'ascendant': 1000000,
     'taxman': 1500000 #dict for ranks against price
     }
 rankup = {
+    'poor': 'Poor',
     'bronze': 'Bronze',
     'silver': 'Silver',
     'gold': 'Gold',
     'platinum': 'Platinum',
     'diamond': 'Diamond',
+    'goldfinger': 'GoldFinger',
     'demigod': 'Demigod',
     'immortal': 'Immortal',
     'ascendant': 'Ascendant',
     'taxman': 'Tax Man' #dict for ranks against display name
     }
 rankids = {
-    'bronze': 1,
-    'silver': 2,
-    'gold': 3,
-    'platinum': 4,
-    'diamond': 5,
-    'immortal': 6,
-    'immortal': 7,
-    'ascendant': 8,
-    'taxman': 9 #rank compared to it's id. Usefull for permission levels
+    'poor': 1,
+    'bronze': 2,
+    'silver': 3,
+    'gold': 4,
+    'platinum': 5,
+    'diamond': 6,
+    'goldfinger': 7,
+    'immortal': 8,
+    'immortal': 9,
+    'ascendant': 10,
+    'taxman': 11 #rank compared to it's id. Usefull for permission levels
 }
 
-cost = 50
+cost = 50 #default cost of stocks, before applying modifiers
+mult = 1
 countdown = None
 refresh = 10
 cycle = 0
-precost = 50
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cost.start()
 
+    @commands.command()
+    async def economy(self, ctx, yes = None):
+        id = ctx.message.guild.id
+        if (ctx.message.author.guild_permissions.administrator) or (ctx.message.author.id == 451643725475479552):
+            if yes == "off":
+                try:
+                    f = open(f"{filepath}/serversettings/{id}/cashenabled.txt", "x")
+                    f.close()
+                    await ctx.send("Economy was disabled for the server")
+                except:
+                    print("Can't create the file")
+            elif yes == "on":
+                try:
+                    os.remove(f"{filepath}/serversettings/{id}/cashenabled.txt")
+                    await ctx.send("Economy was enabled for the server")
+                except:
+                    pass
+            else:
+                await ctx.send("That was not a valid option")
+        else:
+            await ctx.send("Sorry, only admins can toggle the economy")
+
     @commands.command(aliases=["acc", "balance", "bal", "a"]) #shows the user's account
     async def account(self, ctx, *, target: discord.Member = None):
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             if (target == None) and (balfind(ctx.message.author.id) == None):
                 db.insert({'user': ctx.message.author.id, 'bal': 100})
                 db.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
@@ -158,7 +191,7 @@ class money(commands.Cog):
 
     @commands.command()
     async def pay(self, ctx, arg1, target: discord.Member = None): #paying someone
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             urval = int(balfind(ctx.message.author.id)) #finds the balance of the sender
             thrval = int(balfind(int(target.id))) #finds the bal of the target
             thrid = target.id #target's ID
@@ -184,11 +217,11 @@ class money(commands.Cog):
 
     @commands.command()
     async def add(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             if ctx.message.author.id == 451643725475479552:
                 val = int(balfind(int(target.id)))
                 val = val + int(arg1)
-                db.update({"bal": int(val)}, s.user == int(target.id))
+                db.update({"bal": val}, s.user == int(target.id))
                 await ctx.send(f"${arg1} added")
             else:
                 await ctx.send("Nope")
@@ -196,9 +229,9 @@ class money(commands.Cog):
             await ctx.send("Sorry, economy is disabled on this server")
     @commands.command()
     async def set(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             if ctx.message.author.id == 451643725475479552:
-                db.update({"bal": int(arg1)}, s.user == int(target.id))
+                db.update({"bal": arg1}, s.user == int(target.id))
                 await ctx.send(f"Balance set to ${arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -206,9 +239,9 @@ class money(commands.Cog):
             await ctx.send("Sorry, economy is disabled on this server")
     @commands.command()
     async def setstock(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             if ctx.message.author.id == 451643725475479552:
-                db.update({"stock": int(arg1)}, s.suser == int(target.id))
+                db.update({"stock": arg1}, s.suser == int(target.id))
                 await ctx.send(f"Stocks set to {arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -217,7 +250,7 @@ class money(commands.Cog):
     @commands.command(pass_context=True)
     @commands.cooldown(1, 60*60*24, commands.BucketType.user)
     async def daily(self, ctx):
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             if balfind != None:
                 r = random.randint(20,50)
                 addmoney(ctx.message.author.id, r)
@@ -234,11 +267,11 @@ class money(commands.Cog):
 
     @commands.command(aliases=["stock","stonk","stonks"])
     async def stocks(self, ctx, action = None, count = None):
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             global stock
             global cost
             global countdown
-            user = int(ctx.message.author.id)
+            user = ctx.message.author.id
             if stockfind(user) == None:
                 await ctx.send("You need to create an account with -account first")
             else:
@@ -262,7 +295,7 @@ class money(commands.Cog):
                         await ctx.send("You need to enter a number that is over 0")
                     elif action == "buy" and (fcost > bal):
                         await ctx.send("You don't have enough money")
-                    elif (action == "sell") and (count > int(stockcount)):
+                    elif (action == "sell") and (count > stockcount):
                         await ctx.send("You don't own that many stocks")
                     elif action == "buy":
                         addmoney(user, (0 - fcost))
@@ -282,7 +315,7 @@ class money(commands.Cog):
 
     @commands.command(aliases=["ranks"])
     async def rank(self, ctx, ag1 = None, rank=None): #allows someone to buy a rank
-        if settings.check(ctx.message.guild.id, "get", "economy"):
+        if moneyenabled(ctx.message.guild.id):
             global ranks #idk if this is needed but it can't hurt to have it
             user = ctx.message.author.id #"user" is easier to type than "ctx.message.author.id"
             if ag1 != "buy": #if they don't have "buy" as their first arg, send prices
@@ -326,12 +359,11 @@ class money(commands.Cog):
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
         if rand > cost:
-            cost = cost + random.uniform(1, 5)
+            cost = cost + random.uniform(1, 10)
         else:
-            cost = cost - random.uniform(1, 5)
+            cost = cost - random.uniform(1, 10)
         cost = round(cost, 2)
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
-        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"Stock price at ${cost}"))
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))
