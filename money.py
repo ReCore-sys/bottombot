@@ -135,6 +135,8 @@ class money(commands.Cog):
 
             elif (target != None) and (balfind(ctx.message.author.id) == None):
                 await ctx.send("That user does not have an account set up") #if the user pings someone who does not have an account, send this
+            elif (target != None) and (rankfind(ctx.message.author.id) == None):
+                await ctx.send("That user does not have an account set up") #if the user pings someone who does not have an account, send this
 
             elif (target == None) and (balfind(ctx.message.author.id) != None): #show your balance if you don't enter someone else's account name
                 user = ctx.message.author
