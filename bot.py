@@ -50,7 +50,6 @@ cb = cleverbotfree.cbfree.Cleverbot()
 
 @client.event
 async def on_ready():
-    #os.system(f"start cmd /k java -jar {filepath}/Lavalink.jar")
     if platform.system() == "Windows":
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Testing"))
     else:
@@ -58,7 +57,7 @@ async def on_ready():
         status = random.choice(["ReCore's CPU catch fire", "the old gods die", "missiles fly",
                                "the CCCP commit horrific crimes", "bentosalad on twitch", "RealArdan on twitch"])
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
-        client.load_extension("music")
+    client.load_extension("music")
     print("\u001b[35mThe bot is up\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
@@ -66,6 +65,7 @@ async def on_ready():
     client.load_extension("money")
     client.load_extension("cross")
     client.load_extension("modules")
+    client.load_extension("bounty")
 
 
 @client.event
@@ -157,7 +157,7 @@ async def on_message(message):
             # this makes the relevant folders for any servers that don't already have a serversettings entry.
             os.system(f"touch serversettings/{message.guild.id}/replay.txt")
             if message.author != client.user:
-                pingC = message.content
+                pingC = (message.content).decode('utf-8','ignore').encode("utf-8")
                 pingU = message.author
                 f = open(
                     f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")

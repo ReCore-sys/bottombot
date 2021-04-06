@@ -20,6 +20,7 @@ class modules(commands.Cog):
                 embed.add_field(name="Image Search (image)", value=f'{settings.check(ctx.message.guild.id, "get", "image")}', inline=True)
                 embed.add_field(name="Chatbot (bb)", value=f'{settings.check(ctx.message.guild.id, "get", "bb")}', inline=True)
                 embed.add_field(name="Store (store)", value=f'{settings.check(ctx.message.guild.id, "get", "store")}', inline=True)
+                embed.add_field(name="Bounties (bounty)", value=f'{settings.check(ctx.message.guild.id, "get", "bounty")}', inline=True)
                 await ctx.send(embed=embed)
             elif module != None and type == None:
                 await ctx.send("Please enter on or off")

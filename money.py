@@ -1,18 +1,21 @@
-import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib, humanfriendly, settings
+import os, asyncio, math, random, time, async_cse, discord, discord.ext, botlib, humanfriendly, settings, json
 from async_timeout import timeout
 from discord.ext import commands, tasks
 from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
+from num2words import num2words
+import operator
 
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)
-db = TinyDB(f'{filepath}/config/db.json')
-s = Query()
-
+m = TinyDB(f'{filepath}/config/money.json')
+r = TinyDB(f'{filepath}/config/ranks.json')
+s = TinyDB(f'{filepath}/config/stock.json')
+i = Query()
 
 
 def stockfind(dbid): #function to find how many stock a person owns
-    re = db.search(s.suser==dbid)
+    re = s.search(i.suser==dbid)
     try:
         val = re[0]
         return val['stock']
@@ -31,10 +34,10 @@ def addstock(user, amount): #Slightly less simple function to add money to a use
         val = val + amount
     except:
         print("User does not exist 2")
-    db.update({"stock": val}, s.suser == user)
+    s.update({"stock": val}, i.suser == user)
 
 def balfind(dbid): #function to find the balance of the id dbid
-    re = db.search(s.user==dbid)
+    re = m.search(i.user==dbid)
     try:
         val = re[0]
         return val['bal']
@@ -42,7 +45,7 @@ def balfind(dbid): #function to find the balance of the id dbid
         return None
 
 def rankfind(dbid): #same as above but for ranks, not bal
-    re = db.search(s.urank==dbid)
+    re = r.search(i.urank==dbid)
     try:
         val = re[0]
         return (val['rank']).lower()
@@ -66,7 +69,7 @@ def addmoney(user, amount): #Slightly less simple function to add money to a use
         val = val + amount
     except:
         print("User does not exist 3")
-    db.update({"bal": val}, s.user == user)
+    m.update({"bal": val}, i.user == user)
 
 #rank tiering
 #Bronze
@@ -115,6 +118,7 @@ countdown = None
 refresh = 10
 cycle = 0
 precost = 50
+leaderboard = []
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -124,9 +128,9 @@ class money(commands.Cog):
     async def account(self, ctx, *, target: discord.Member = None):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if (target == None) and (balfind(ctx.message.author.id) == None):
-                db.insert({'user': ctx.message.author.id, 'bal': 100})
-                db.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
-                db.insert({'suser': ctx.message.author.id, 'stock': 0})
+                m.insert({'user': ctx.message.author.id, 'bal': 100})
+                r.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
+                s.insert({'suser': ctx.message.author.id, 'stock': 0})
                 await ctx.send("Account created!") #if the user does not have an account, create one
 
             elif (target != None) and (balfind(ctx.message.author.id) == None):
@@ -175,8 +179,8 @@ class money(commands.Cog):
             else: #if you can actually pay them
                 urval = urval - int(arg1) #takes the amount from your bal
                 thrval = thrval + int(arg1) #adds the amount to their bal
-                db.update({"bal": urval}, s.user == (ctx.message.author.id))
-                db.update({"bal": thrval}, s.user == int(target.id)) #write changes to the db
+                m.update({"bal": urval}, s.user == (ctx.message.author.id))
+                m.update({"bal": thrval}, s.user == int(target.id)) #write changes to the db
                 await ctx.send(f"${arg1} was transferred to <@!{target.id}>") #inform the person that they were paid
                 await target.send(f"{ctx.message.author} just payed you ${arg1}!\n({ctx.guild.name})") #send dm to target. Still not working
         else:
@@ -188,7 +192,7 @@ class money(commands.Cog):
             if ctx.message.author.id == 451643725475479552:
                 val = int(balfind(int(target.id)))
                 val = val + int(arg1)
-                db.update({"bal": int(val)}, s.user == int(target.id))
+                m.update({"bal": int(val)}, s.user == int(target.id))
                 await ctx.send(f"${arg1} added")
             else:
                 await ctx.send("Nope")
@@ -198,7 +202,7 @@ class money(commands.Cog):
     async def set(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
-                db.update({"bal": int(arg1)}, s.user == int(target.id))
+                m.update({"bal": int(arg1)}, s.user == int(target.id))
                 await ctx.send(f"Balance set to ${arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -208,7 +212,7 @@ class money(commands.Cog):
     async def setstock(self, ctx, arg1, target: discord.Member): #adds money to an account. Only I can use it
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
-                db.update({"stock": int(arg1)}, s.suser == int(target.id))
+                s.update({"stock": int(arg1)}, s.suser == int(target.id))
                 await ctx.send(f"Stocks set to {arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -252,7 +256,10 @@ class money(commands.Cog):
 
                 stockcount = stockfind(user)
                 bal = balfind(ctx.message.author.id)
-                timeto = countdown - datetime.now()
+                try:
+                    timeto = countdown - datetime.now()
+                except:
+                    pass
                 if action == None:
                     await ctx.send(f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}")
                 else:
@@ -310,11 +317,27 @@ class money(commands.Cog):
                 else:
                     cost =  0 - val  #turn the value into a negative so you can buy it properly
                     rank2 = rankup[rank.lower()] #gets the display name of the rank
-                    db.update({"rank": rank2}, s.urank == int(ctx.message.author.id)) #writes new rank to db
+                    r.update({"rank": rank2}, s.urank == int(ctx.message.author.id)) #writes new rank to db
                     addmoney(user, cost) #takes the money from the account (adds a negative value)
                     await ctx.send(f"Rank {rank} was bought for ${val}") #let them know
         else:
             await ctx.send("Sorry, economy is disabled on this server")
+    @commands.command(aliases=["leaderboard", "leader", "board"])
+    async def lb(self, ctx):
+        global leaderboard
+        embed=discord.Embed(title="Leaderboard", description="Current leaderboard", color=0x1e00ff)
+        c = 0
+        for x in leaderboard:
+            c = c + 1
+            if c <= 5:
+                embed.add_field(name=await self.bot.fetch_user(x[0]), value=f"${x[1]}", inline=False) #loops through all the ranks so I don't have to hardcode it
+        dicter = dict(leaderboard)
+        lister = list(dicter)
+        pos = num2words(((lister.index(ctx.message.author.id)) + 1), to='ordinal_num')
+        embed.set_footer(text=f"Your position: {pos}")
+        await ctx.send(embed=embed)
+
+
 
     @tasks.loop(seconds=60*refresh)
     async def cost(self):
@@ -322,6 +345,16 @@ class money(commands.Cog):
         global countdown
         global refresh
         global cycle
+        global leaderboard
+        leaderboard = []
+        f = open(f'{filepath}/config/money.json')
+        l = dict(json.load(f))
+        v = dict(l["_default"])
+        for x in v:
+            leaderboard.append(((v[x]['user']), (v[x]['bal'])))
+
+        leaderboard = sorted(leaderboard, key=operator.itemgetter(1), reverse=True)
+
         cycle = cycle + 1
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
@@ -332,6 +365,7 @@ class money(commands.Cog):
         cost = round(cost, 2)
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"Stock price at ${cost}"))
+        f.close()
 
 def setup(bot: commands.Bot):
     bot.add_cog(money(bot))
