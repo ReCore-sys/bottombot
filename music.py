@@ -746,7 +746,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         members = self.bot.get_channel(int(player.channel_id)).members
 
         if member and member not in members:
-            return await ctx.send(f'{member} is not currently in voice, so can not be a DJ.', delete_after=15)
+            return await ctx.send(f'{member} != currently in voice, so can not be a DJ.', delete_after=15)
 
         if member and member == player.dj:
             return await ctx.send('Cannot swap DJ to the current DJ... :)', delete_after=15)

@@ -1,31 +1,25 @@
+
 import os
-import asyncio
-import math
 import random
 import time
 import better_profanity
 import async_cse
 import discord
-import operator
-import ast
 import datetime
 import urllib.parse
 import requests
 import wolframalpha
 import platform
-from async_timeout import timeout
 from discord.ext import menus, commands
 from translate import Translator
 import botlib
 import bottomlib
 import money
-from pprint import pprint
 import cleverbotfree.cbfree
 import json
 import settings
 import helplib
-
-# python3 -m pip install discord.py asyncio async_cse googlesearch-python better-profanity translate simpleeval cleverbotfree wavelink
+# pylint: disable=E501
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
 filepath = os.path.abspath(os.path.dirname(__file__))
 # more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
@@ -54,7 +48,6 @@ async def on_ready():
     if platform.system() == "Windows":
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Testing"))
     else:
-        activity = discord.Game(name="bottombot", type=3)
         status = random.choice(["ReCore's CPU catch fire", "the old gods die", "missiles fly",
                                "the CCCP commit horrific crimes", "bentosalad on twitch", "RealArdan on twitch"])
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
@@ -147,12 +140,12 @@ async def init(ctx):
 async def on_member_join(member):
     role = discord.utils.get(member.server.roles, id=821166866348376116)
     if (member.id == 821161880734793738):
-        await bot.add_roles(member, role)
+        await client.add_roles(member, role)
 
 
 @client.event
 async def on_message(message):
-    if '<@!' in message.content:
+    if '<@' in message.content:
         try:
             os.system(f'mkdir serversettings/{message.guild.id}')
             # this makes the relevant folders for any servers that don't already have a serversettings entry.
@@ -167,7 +160,10 @@ async def on_message(message):
                 f.close()
         except:
             pass
-
+    elif message.content == "around the world":
+        for _ in range(300):
+            await message.channel.send("Around the world")
+            time.sleep(0.5)
     r = random.randint(0, 14)
     u = message.author.id
     if (r == 9) and (message.author.id != 758912539836547132):
@@ -180,7 +176,7 @@ async def on_message(message):
 
 @client.command()
 async def rewind(ctx, val = 1):
-    if val.isnumeric():
+    if str(val).isnumeric():
         with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
             lines = f.read().splitlines()
             last_line = lines[int(val) * -1]
@@ -233,9 +229,11 @@ async def moneyenabled(ctx):
     print(id)
     print(money.moneyenabled(id))
 
+
 @client.command()
 async def fox(ctx):
     await ctx.send(f"https://randomfox.ca/images/{random.randint(1,122)}.jpg")
+
 
 @client.command()
 async def pussy(ctx):
@@ -248,18 +246,23 @@ async def pussy(ctx):
         else:
             break
     await ctx.send(t["file"])
+
+
 @client.command()
 async def dog(ctx):
     URL = "https://random.dog/woof.json"
     r = requests.get(url = URL)
     t = r.json()
     await ctx.send(t["url"])
+
+
 @client.command()
 async def xkcd(ctx):
     URL = f"https://xkcd.com/{random.randint(1,2400)}/info.0.json"
     r = requests.get(url = URL)
     t = r.json()
     await ctx.send(t["img"])
+
 
 @client.command()
 async def ru(ctx, *, args):
@@ -489,8 +492,9 @@ async def update(ctx, *, args):
             address = client.get_channel(int(x))
             await address.send(args)"""
 
+
 @client.command()
-async def search(ctx, *, val = None):
+async def search(ctx, *, val=None):
     if settings.check(ctx.message.guild.id, "get", "search"):
         if val == None:
             await ctx.send("You need to give me a query")
@@ -498,14 +502,14 @@ async def search(ctx, *, val = None):
             isbad2 = better_profanity.profanity.contains_profanity(val)
             if money.ranktoid(ctx.message.author.id) >= 3:
 
-                if ((isbad2 == True) or (val in badsearch)):
+                if ((isbad2) or (val in badsearch)):
                     badresponse = random.choice(["This is why your parents don't love you", "Really?",
                                                 "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
                     await ctx.send(badresponse)
                     print(
                         f"\u001b[33;1m{ctx.message.author} tried to search '{val}'\u001b[31m")
 
-                elif (val.find("urbandictionary") == True):
+                elif (val.find("urbandictionary")):
                     await ctx.send("Lol no")
 
                 elif "://" in val:
@@ -536,7 +540,7 @@ async def search(ctx, *, val = None):
 
 
 @client.command()
-async def image(ctx, *, val = None):
+async def image(ctx, *, val=None):
     if val == None:
         await ctx.send("Sorry, You need to give me a query to search for")
     else:
@@ -559,7 +563,7 @@ async def image(ctx, *, val = None):
                     results = await client.search(val, safesearch=True)
                     first_result = results[0]  # Grab the first result
                     if "urbandictionary" in first_result.image_url:
-                        await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
+                        await ctx.send("Thanks to <@567522840752947210>, urban dictionary == banned")
                     else:
                         await ctx.send(f"{first_result.image_url}")
                         await client.close()
@@ -601,23 +605,18 @@ async def help(ctx, menu=None):
         for v in result[x]:
             result2[v] = result[x][v]
     if menu not in result2:
-        embed=discord.Embed(title="Help", description="Welcome to the help menu. Do -help <command> to see what an individual command does", color=0x1e00ff)
+        embed = discord.Embed(title="Help", description="Welcome to the help menu. Do -help <command> to see what an individual command does", color=0x1e00ff)
         for x in result:
             list = []
             for v in result[x]:
                 list.append(v)
             nicelist = (', '.join(list))
-            embed.add_field(name=x, value = f"`{nicelist}`", inline=True)
+            embed.add_field(name=x, value=f"`{nicelist}`", inline=True)
 
         await ctx.send(embed=embed)
     else:
-        embed=discord.Embed(title=menu, description=result2[menu], color=0x1e00ff)
+        embed = discord.Embed(title=menu, description=result2[menu], color=0x1e00ff)
         await ctx.send(embed=embed)
 
 
-
 client.run(token)
-
-# To do
-# Editable prefixes
-# Maybe premium commands you need to pay for?
