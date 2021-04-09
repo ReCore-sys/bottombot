@@ -195,6 +195,7 @@ class money(commands.Cog):
                 embed.set_thumbnail(url=user.avatar_url)
                 embed.add_field(name="ID", value=f"{user.id}", inline=True)
                 embed.add_field(name="Balance", value=f"${balfind(user.id)}", inline=False)
+                embed.add_field(name="Wallet cap", value=f"${rankcap[rankfind(user.id)]} ({round((balfind(user.id) / rankcap[rankfind(user.id)] * 100))}% used)", inline=False)
                 embed.add_field(name="Rank", value=f"{rankup[rankfind(user.id)]}", inline=False)
                 embed.add_field(name="Owned stocks", value=f"{stockfind(user.id)}", inline=False)
                 await ctx.send(embed=embed)
@@ -341,7 +342,7 @@ class money(commands.Cog):
                             addstock(user, (0 - count))
                             await ctx.send(f"{count} stocks sold for ${fcost}")
                         else:
-                            await ctx.send("Sorry, that goes over you wallet cap")
+                            await ctx.send("Sorry, that goes over your wallet cap")
                     elif action == "calc":
                         await ctx.send(f"{count} stocks at ${cost} is worth ${round(count * cost)}")
         else:
@@ -418,15 +419,15 @@ class money(commands.Cog):
         lb.set_footer(text=f"Your position: {num2words(count, to='ordinal_num')} out of {len(leaderboard)}")
         await ctx.send(embed=lb)
 
-    @commands.command()
+    @commands.command(aliases=["store", "shops"])
     async def shop(self, ctx, *, action = None):
         items = itemlist.items()
         uitems = itemfind(ctx.message.author.id)
         if action == None:
             embed = discord.Embed(title="Shop", description="Current items in the store", color=0xFFD700)
-            print(items)
+            items = dict(sorted(items.items(), key=lambda item: item[1]))
             for x in items:
-                embed.add_field(name=x, value=f"${items[x]}", inline=False)
+                embed.add_field(name=x, value=f"${items[x]}", inline=True)
             await ctx.send(embed=embed)
         else:
             if action not in items:
@@ -441,7 +442,7 @@ class money(commands.Cog):
                 it.update({"items": uitems}, i.user == int(ctx.message.author.id))
                 await ctx.send(f"{action} bought for ${items[action]}")
 
-    @commands.command()
+    @commands.command(aliases=["inventory", "i"])
     async def inv(self, ctx):
         user = ctx.message.author
         head, sep, tail = str(user).partition('#')

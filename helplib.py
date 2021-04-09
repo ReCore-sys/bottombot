@@ -24,6 +24,9 @@ def help(cmd = None):
             "daily": "earns you between $20 and $50. Has a 24 hour cooldown.",
             "leaderboard": "Shows the top 5 economy users and your standing. Compiles current value, stock value and rank price",
             "bounty": "Shows current bounties. Do -bounty <bounty name> to see more info and -bounty take <name> to take the bounty",
+            "shop": "(-shop or -shop <item>)\nShows the shop and the prices. You can buy items by specifying the item. Item names are case sensitive",
+            "inventory": "Shows your owned items",
+            "trivia": "Sends a trivia question. You have 10 seconds to send your answer. First person to correctly answer gets 30 to 50 dollars.",
             "stocks": "([buy/sell] <number to buy/sell or 'all'>) \nRunning without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks"},
         "Other": {
             "bottomgear": "Prints out a randomly generated bottomgear meme. Probably NSFW.",
