@@ -16,12 +16,14 @@ from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
 from num2words import num2words
 import operator
+import itemlist
 
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)
 m = TinyDB(f'{filepath}/config/money.json')
 r = TinyDB(f'{filepath}/config/ranks.json')
 s = TinyDB(f'{filepath}/config/stock.json')
+it = TinyDB(f'{filepath}/config/items.json')
 i = Query()
 
 
@@ -55,6 +57,15 @@ def balfind(dbid):  # function to find the balance of the id dbid
     try:
         val = re[0]
         return val['bal']
+    except:
+        return None
+
+
+def itemfind(dbid):  # function to find the balance of the id dbid
+    re = it.search(i.user == dbid)
+    try:
+        val = re[0]
+        return val['items']
     except:
         return None
 
@@ -170,6 +181,7 @@ class money(commands.Cog):
                 m.insert({'user': ctx.message.author.id, 'bal': 100})
                 r.insert({'user': ctx.message.author.id, 'rank': "Bronze"})
                 s.insert({'user': ctx.message.author.id, 'stock': 0})
+                it.insert({'user': ctx.message.author.id, 'items': []})
                 await ctx.send("Account created!")  # if the user does not have an account, create one
 
             elif (target != None) and (balfind(ctx.message.author.id) == None):
@@ -405,6 +417,40 @@ class money(commands.Cog):
                     lb.add_field(name=await self.bot.fetch_user(x[0]), value=f"${x[1]}", inline=False)
         lb.set_footer(text=f"Your position: {num2words(count, to='ordinal_num')} out of {len(leaderboard)}")
         await ctx.send(embed=lb)
+
+    @commands.command()
+    async def shop(self, ctx, *, action = None):
+        items = itemlist.items()
+        uitems = itemfind(ctx.message.author.id)
+        if action == None:
+            embed = discord.Embed(title="Shop", description="Current items in the store", color=0xFFD700)
+            print(items)
+            for x in items:
+                embed.add_field(name=x, value=f"${items[x]}", inline=False)
+            await ctx.send(embed=embed)
+        else:
+            if action not in items:
+                await ctx.send("That is not a valid item")
+            elif action in uitems:
+                await ctx.send("You already own that")
+            elif items[action] > balfind(ctx.message.author.id):
+                await ctx.send("You don't have enough money")
+            else:
+                addmoney(ctx.message.author.id, 0 - items[action])
+                uitems.append(action)
+                it.update({"items": uitems}, i.user == int(ctx.message.author.id))
+                await ctx.send(f"{action} bought for ${items[action]}")
+
+    @commands.command()
+    async def inv(self, ctx):
+        user = ctx.message.author
+        head, sep, tail = str(user).partition('#')
+        uitems = itemfind(ctx.message.author.id)
+        embed = discord.Embed(title=f"{head}'s Items", description="Owned items", color=0x8800ff)
+        embed.set_thumbnail(url=user.avatar_url)
+        for x in uitems:
+            embed.add_field(name=x, value="\u200b", inline=True)
+        await ctx.send(embed=embed)
 
     @tasks.loop(seconds=60 * refresh)
     async def cost(self):

@@ -102,7 +102,7 @@ class trivia(commands.Cog):
         await asyncio.sleep(10)
         if done == True:
             prize = random.randint(20, 30)
-            if elif balfind(winnerid) + prize <= cap[money.rankfind(winnerid)]:
+            if balfind(winnerid) + prize <= cap[money.rankfind(winnerid)]:
                 await ctx.send(f"The question has been answered! The winner was {winner} and they won ${prize}")
                 money.addmoney(winnerid, prize)
             else:
