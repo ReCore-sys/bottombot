@@ -1,10 +1,13 @@
 import settings, json, discord, os
 from discord.ext import commands
 filepath = os.path.abspath(os.path.dirname(__file__))
+
+
 class modules(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    @commands.command(aliases=["modules","mod"])
+
+    @commands.command(aliases=["modules", "mod"])
     async def module(self, ctx, module = None, type = None):
         global valids
         serverid = ctx.message.guild.id
@@ -13,13 +16,14 @@ class modules(commands.Cog):
             v = json.loads(f.read())
             f.close()
             if module == None:
-                embed=discord.Embed(title="Modules", description="Use -modules <module id> <on/off> to enable and disable parts of the bot")
+                embed = discord.Embed(title="Modules", description="Use -modules <module id> <on/off> to enable and disable parts of the bot")
                 embed.add_field(name="Economy (economy)", value=f'{settings.check(ctx.message.guild.id, "get", "economy")}', inline=True)
                 embed.add_field(name="Cross server chat (cross)", value=f'{settings.check(ctx.message.guild.id, "get", "cross")}', inline=True)
                 embed.add_field(name="Search (search)", value=f'{settings.check(ctx.message.guild.id, "get", "search")}', inline=True)
                 embed.add_field(name="Image Search (image)", value=f'{settings.check(ctx.message.guild.id, "get", "image")}', inline=True)
                 embed.add_field(name="Chatbot (bb)", value=f'{settings.check(ctx.message.guild.id, "get", "bb")}', inline=True)
                 embed.add_field(name="Store (store)", value=f'{settings.check(ctx.message.guild.id, "get", "store")}', inline=True)
+                embed.add_field(name="Bounties (bounty)", value=f'{settings.check(ctx.message.guild.id, "get", "bounty")}', inline=True)
                 await ctx.send(embed=embed)
             elif module != None and type == None:
                 await ctx.send("Please enter on or off")
@@ -36,5 +40,7 @@ class modules(commands.Cog):
                     await ctx.send("Please enter on or off")
         else:
             await ctx.send("Sorry, only admins can change settings")
+
+
 def setup(bot: commands.Bot):
     bot.add_cog(modules(bot))

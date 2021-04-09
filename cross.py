@@ -13,6 +13,7 @@ from discord.ext import menus, commands, tasks
 import botlib
 import bottomlib
 import money
+import settings
 
 # init stuff
 filepath = os.path.abspath(os.path.dirname(__file__))
