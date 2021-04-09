@@ -26,7 +26,7 @@ i = Query()
 
 
 def stockfind(dbid):  # function to find how many stock a person owns
-    re = s.search(i.suser == dbid)
+    re = s.search(i.user == dbid)
     try:
         val = re[0]
         return val['stock']
@@ -47,7 +47,7 @@ def addstock(user, amount):  # Slightly less simple function to add money to a u
         val = val + amount
     except:
         print("User does not exist 2")
-    s.update({"stock": val}, i.suser == user)
+    s.update({"stock": val}, i.user == user)
 
 
 def balfind(dbid):  # function to find the balance of the id dbid
@@ -60,7 +60,7 @@ def balfind(dbid):  # function to find the balance of the id dbid
 
 
 def rankfind(dbid):  # same as above but for ranks, not bal
-    re = r.search(i.urank == dbid)
+    re = r.search(i.user == dbid)
     try:
         val = re[0]
         return (val['rank']).lower()
@@ -90,6 +90,9 @@ def addmoney(user, amount):  # Slightly less simple function to add money to a u
         print("User does not exist 3")
     m.update({"bal": val}, i.user == user)
 
+
+def cap():
+    return rankcap
 # rank tiering
 # Bronze
 # Silver
@@ -133,6 +136,17 @@ rankids = {
     'ascendant': 8,
     'taxman': 9  # rank compared to it's id. Usefull for permission levels
 }
+rankcap = {
+    'bronze': 1000,
+    'silver': 2000,
+    'gold': 7500,
+    'platinum': 12000,
+    'diamond': 25000,
+    'demigod': 750000,
+    'immortal': 1000000,
+    'ascendant': 1750000,
+    'taxman': 2000000  # dict for ranks against price
+}
 
 cost = 50
 countdown = None
@@ -154,8 +168,8 @@ class money(commands.Cog):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if (target == None) and (balfind(ctx.message.author.id) == None):
                 m.insert({'user': ctx.message.author.id, 'bal': 100})
-                r.insert({'urank': ctx.message.author.id, 'rank': "Bronze"})
-                s.insert({'suser': ctx.message.author.id, 'stock': 0})
+                r.insert({'user': ctx.message.author.id, 'rank': "Bronze"})
+                s.insert({'user': ctx.message.author.id, 'stock': 0})
                 await ctx.send("Account created!")  # if the user does not have an account, create one
 
             elif (target != None) and (balfind(ctx.message.author.id) == None):
@@ -202,6 +216,8 @@ class money(commands.Cog):
                 await ctx.send("You can't pay less than $1 to someone")
             elif (int(arg1) >= urval) or (urval - int(arg1) < 0):  # if either you have less than $1 or you try and pay more than you have
                 await ctx.send("Sorry, you don't have enough money")
+            elif balfind(thrid) + arg1 > rankcap[rankfind(thrid)]:
+                await ctx.send("Sorry, that goes over their wallet cap")
             else:  # if you can actually pay them
                 urval = urval - int(arg1)  # takes the amount from your bal
                 thrval = thrval + int(arg1)  # adds the amount to their bal
@@ -240,7 +256,7 @@ class money(commands.Cog):
     async def setstock(self, ctx, arg1, target: discord.Member):  # adds money to an account. Only I can use it
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
-                s.update({"stock": int(arg1)}, s.suser == int(target.id))
+                s.update({"stock": int(arg1)}, i.user == int(target.id))
                 await ctx.send(f"Stocks set to {arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -253,8 +269,11 @@ class money(commands.Cog):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if balfind != None:
                 r = random.randint(20, 50)
-                addmoney(ctx.message.author.id, r)
-                await ctx.send(f"${r} was added to your account")
+                if balfind(ctx.message.author.id) + r <= rankcap[rankfind(ctx.message.author.id)]:
+                    addmoney(ctx.message.author.id, r)
+                    await ctx.send(f"${r} was added to your account")
+                else:
+                    await ctx.send("Sorry, that goes over your wallet cap")
             else:
                 await ctx.send("You do not have an account. Do -account to make one")
         else:
@@ -305,9 +324,12 @@ class money(commands.Cog):
                         addstock(user, count)
                         await ctx.send(f"{count} stocks bought for ${fcost}")
                     elif action == "sell":
-                        addmoney(user, fcost)
-                        addstock(user, (0 - count))
-                        await ctx.send(f"{count} stocks sold for ${fcost}")
+                        if balfind(ctx.message.author.id) + fcost <= rankcap[rankfind(ctx.message.author.id)]:
+                            addmoney(user, fcost)
+                            addstock(user, (0 - count))
+                            await ctx.send(f"{count} stocks sold for ${fcost}")
+                        else:
+                            await ctx.send("Sorry, that goes over you wallet cap")
                     elif action == "calc":
                         await ctx.send(f"{count} stocks at ${cost} is worth ${round(count * cost)}")
         else:
@@ -343,7 +365,7 @@ class money(commands.Cog):
                 else:
                     cost = 0 - val  # turn the value into a negative so you can buy it properly
                     rank2 = rankup[rank.lower()]  # gets the display name of the rank
-                    r.update({"rank": rank2}, s.urank == int(ctx.message.author.id))  # writes new rank to db
+                    r.update({"rank": rank2}, i.user == int(ctx.message.author.id))  # writes new rank to db
                     addmoney(user, cost)  # takes the money from the account (adds a negative value)
                     await ctx.send(f"Rank {rank} was bought for ${val}")  # let them know
         else:
@@ -363,7 +385,7 @@ class money(commands.Cog):
         v = dict(loaded["_default"])
         for x in v:
             totalval = (v[x]['bal']) + (stockfind((v[x]['user'])) * cost)
-            totalval = totalval + ranks[rankfind(ctx.message.author.id)]
+            totalval = totalval + ranks[rankfind((v[x]['user']))]
             totalval = round(totalval)
             leaderboard.append(((v[x]['user']), totalval))
 

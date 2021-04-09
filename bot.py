@@ -60,6 +60,7 @@ async def on_ready():
     client.load_extension("cross")
     client.load_extension("modules")
     client.load_extension("bounty")
+    client.load_extension("trivia")
 
 
 @client.event
