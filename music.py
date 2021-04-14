@@ -92,7 +92,8 @@ class Player(wavelink.Player):
         self.updating = True
 
         if not self.controller:
-            self.controller = InteractiveController(embed=self.build_embed(), player=self)
+            self.controller = InteractiveController(
+                embed=self.build_embed(), player=self)
             await self.controller.start(self.context)
 
         elif not await self.is_position_fresh():
@@ -103,7 +104,8 @@ class Player(wavelink.Player):
 
             self.controller.stop()
 
-            self.controller = InteractiveController(embed=self.build_embed(), player=self)
+            self.controller = InteractiveController(
+                embed=self.build_embed(), player=self)
             await self.controller.start(self.context)
 
         else:
@@ -121,11 +123,13 @@ class Player(wavelink.Player):
         channel = self.bot.get_channel(int(self.channel_id))
         qsize = self.queue.qsize()
 
-        embed = discord.Embed(title=f'Music Controller | {channel.name}', colour=0xebb145)
+        embed = discord.Embed(
+            title=f'Music Controller | {channel.name}', colour=0xebb145)
         embed.description = f'Now Playing:\n**`{track.title}`**\n\n'
         embed.set_thumbnail(url=track.thumb)
 
-        embed.add_field(name='Duration', value=str(datetime.timedelta(milliseconds=int(track.length))))
+        embed.add_field(name='Duration', value=str(
+            datetime.timedelta(milliseconds=int(track.length))))
         embed.add_field(name='Queue Length', value=str(qsize))
         embed.add_field(name='Volume', value=f'**`{self.volume}%`**')
         embed.add_field(name='Requested By', value=track.requester.mention)
@@ -283,7 +287,8 @@ class PaginatorSource(menus.ListPageSource):
 
     async def format_page(self, menu: menus.Menu, page):
         embed = discord.Embed(title='Coming Up...', colour=0x4f0321)
-        embed.description = '\n'.join(f'`{index}. {title}`' for index, title in enumerate(page, 1))
+        embed.description = '\n'.join(
+            f'`{index}. {title}`' for index, title in enumerate(page, 1))
 
         return embed
 
@@ -302,8 +307,10 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             bot.wavelink = wavelink.Client(bot=bot)
 
         bot.loop.create_task(self.start_nodes())
+
     async def get_best_nodes():
         return
+
     async def start_nodes(self) -> None:
         """Connect and intiate nodes."""
         await self.bot.wait_until_ready()
@@ -314,7 +321,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             for node in previous.values():
                 await node.destroy()
 
-        nodes =  {'MAIN': {'host': '127.0.0.1',
+        nodes = {'MAIN': {'host': '127.0.0.1',
                           'port': 2333,
                           'rest_uri': 'http://127.0.0.1:2333',
                           'password': 'youshallnotpass',
@@ -339,7 +346,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if member.bot:
             return
 
-        player: Player = self.bot.wavelink.get_player(member.guild.id, cls=Player)
+        player: Player = self.bot.wavelink.get_player(
+            member.guild.id, cls=Player)
 
         if not player.channel_id or not player.context:
             player.node.players.pop(member.guild.id)
@@ -378,7 +386,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         """Coroutine called before command invocation.
         We mainly just want to check whether the user is in the players controller channel.
         """
-        player: Player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            ctx.guild.id, cls=Player, context=ctx)
 
         if player.context:
             if player.context.channel != ctx.channel:
@@ -404,7 +413,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     def required(self, ctx: commands.Context):
         """Method which returns required votes based on amount of members in a channel."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
         channel = self.bot.get_channel(int(player.channel_id))
         required = math.ceil((len(channel.members) - 1) / 2.5)
 
@@ -416,7 +426,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     def is_privileged(self, ctx: commands.Context):
         """Check whether the user is an Admin or DJ."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         return player.dj == ctx.author or ctx.author.guild_permissions.kick_members
 
@@ -426,7 +437,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -connect\n")
         f.close()"""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if player.is_connected:
             return
@@ -440,7 +452,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command()
     async def play(self, ctx: commands.Context, *, query: str):
         """Play or queue a song with the given query."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
         """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -play {args}\n")
         f.close()"""
@@ -476,7 +489,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -pause\n")
         f.close()"""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if player.is_paused or not player.is_connected:
             return
@@ -503,7 +517,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -resume\n")
         f.close()"""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_paused or not player.is_connected:
             return
@@ -530,7 +545,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -skip\n")
         f.close()"""
         """Skip the currently playing song."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -567,7 +583,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         """f = open(f"{filepath}/logs.txt", "a")
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -stop\n")
         f.close()"""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -593,7 +610,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -volume {args}\n")
         f.close()"""
         """Change the players volume, between 1 and 100."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -611,9 +629,11 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     async def shuffle(self, ctx: commands.Context):
         """Shuffle the players queue."""
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -shuffle\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -shuffle\n")
         f.close()
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -639,7 +659,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(hidden=True)
     async def vol_up(self, ctx: commands.Context):
         """Command used for volume up button."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected or not self.is_privileged(ctx):
             return
@@ -655,7 +676,8 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(hidden=True)
     async def vol_down(self, ctx: commands.Context):
         """Command used for volume down button."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected or not self.is_privileged(ctx):
             return
@@ -671,10 +693,12 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(aliases=['eq'])
     async def equalizer(self, ctx: commands.Context, *, equalizer: str):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -equaliser {args}\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -equaliser {args}\n")
         f.close()
         """Change the players equalizer."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -699,10 +723,12 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(aliases=['q', 'que'])
     async def queue(self, ctx: commands.Context):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -queue\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -queue\n")
         f.close()
         """Display the players queued songs."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -712,17 +738,20 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
         entries = [track.title for track in player.queue._queue]
         pages = PaginatorSource(entries=entries)
-        paginator = menus.MenuPages(source=pages, timeout=None, delete_message_after=True)
+        paginator = menus.MenuPages(
+            source=pages, timeout=None, delete_message_after=True)
 
         await paginator.start(ctx)
 
     @commands.command(aliases=['np', 'now_playing', 'current'])
     async def nowplaying(self, ctx: commands.Context):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -nowplaying\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -nowplaying\n")
         f.close()
         """Update the player controller."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
@@ -732,10 +761,12 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(aliases=['swap'])
     async def swap_dj(self, ctx: commands.Context, *, member: discord.Member = None):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -swap {args}\n")
+        f.write(
+            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -swap {args}\n")
         f.close()
         """Swap the current DJ to another member in the voice channel."""
-        player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
+        player: Player = self.bot.wavelink.get_player(
+            guild_id=ctx.guild.id, cls=Player, context=ctx)
 
         if not player.is_connected:
             return
