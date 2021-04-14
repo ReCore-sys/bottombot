@@ -547,7 +547,7 @@ class money(commands.Cog):
                           i.user == int(ctx.message.author.id))
                 # adds the item to the player's inventory.
                 await ctx.send(f"{action} bought for ${items[action]}")
-                # TODO make the items actually do shit. currently just cosmetic. Also add pages to the shop, same way as dank memer. Or, other idea, make players able to set up their own shops.
+                # TODO Allow players to run their own shops with crafting items
 
     @commands.command(aliases=["inventory", "i"])
     async def inv(self, ctx):
