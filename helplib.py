@@ -1,5 +1,5 @@
 
-def help(cmd = None):
+def help(cmd=None):
     helper = {
         "Music": {
             "connect": "Connect to a voice channel.",

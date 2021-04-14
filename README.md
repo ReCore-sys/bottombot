@@ -17,13 +17,10 @@ Far too many sleepless nights resulted in the following:
 ## To Do
 ### Economy
 
- - Improve the stock market algorithm cos its shit
- - Add more stuff to buy
  - Optimize ranks command
  - Add shorting (Maybe)
  - Add command to show previous prices of stocks
  - Stock market influence
- - Ranks cap wallet size
  - Bet on coin flips
  - -weekly command. Like -daily but 5 times the outcome
 ### Cross server chat
@@ -36,7 +33,6 @@ Far too many sleepless nights resulted in the following:
  - Document the main part
  - Fix -maths
  - Buy CleverBot Pro (When I finally get the money)
- - Make a seperate lib for the -help and add that into a embed and `for x in` loop to make it easier to change in the future
 
  ## How you can help
 

@@ -28,10 +28,13 @@ cap = money.cap()
 
 
 def text_on_img(filename='image.png', text="Hello", size=12):
-    fnt = ImageFont.truetype('arial.ttf', size)
-    image = Image.new(mode = "RGB", size = (int(size / 2) * len(text), size + 50), color = (54, 57, 63))
+    try:
+        font = ImageFont.truetype("/Library/fonts/Arial.ttf", size)
+    except:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", size)
+    image = Image.new(mode = "RGB", size = (int(size) * len(text), size + 50), color = (54, 57, 63))
     draw = ImageDraw.Draw(image)
-    draw.text((10, 10), text, font=fnt, fill=(255, 255, 0))
+    draw.text((10, 10), text, font=font, fill=(255, 255, 0))
     image.save(filename)
 
 
@@ -89,7 +92,7 @@ class trivia(commands.Cog):
         list.append(answer)
         print(list)
         random.shuffle(list)
-        text_on_img(text=question, size=300)
+        text_on_img(text=question, size=500)
         img = discord.File("image.png")
         e = discord.Embed()
         embed = discord.Embed(
@@ -98,11 +101,10 @@ class trivia(commands.Cog):
         e.set_image(url="attachment://image.png")
         await ctx.send(file = file, embed=e)
         await ctx.send(embed=embed)
-        await ctx.send(answer)
-        await asyncio.sleep(10)
+        await asyncio.sleep(delay)
         if done == True:
             prize = random.randint(20, 30)
-            if balfind(winnerid) + prize <= cap[money.rankfind(winnerid)]:
+            if money.balfind(winnerid) + prize <= cap[money.rankfind(winnerid)]:
                 await ctx.send(f"The question has been answered! The winner was {winner} and they won ${prize}")
                 money.addmoney(winnerid, prize)
             else:
