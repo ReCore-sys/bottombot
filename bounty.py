@@ -1,11 +1,17 @@
-import settings, json, discord, os
+import settings
+import json
+import discord
+import os
 from discord.ext import commands, menus
 filepath = os.path.abspath(os.path.dirname(__file__))
+
+
 class bounty(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
     @commands.command(aliases=["bounties"])
-    async def bounty(self, ctx, action = None, name = None, price = None, catagory = None, *, description = None):
+    async def bounty(self, ctx, action=None, name=None, price=None, catagory=None, *, description=None):
         f = open(f"{filepath}/config/bounties.json", "r")
         v = json.loads(f.read())
         f.close()
@@ -15,14 +21,16 @@ class bounty(commands.Cog):
         num = 0
         num = 0
         if action == None:
-            embed=discord.Embed(title="Bounties", description="Current tasks worth money\nDM ReCore if you have any questions", color=0x1e00ff)
+            embed = discord.Embed(
+                title="Bounties", description="Current tasks worth money\nDM ReCore if you have any questions", color=0x1e00ff)
             for x in v:
                 num = num + 1
                 embed.add_field(name=x, value=f"${v[x][0]}", inline=False)
             await ctx.send(embed=embed)
         elif action == "add":
             if ctx.message.author.id == 451643725475479552:
-                v[name.replace('"', '')] = list([int(price), catagory, description])
+                v[name.replace('"', '')] = list(
+                    [int(price), catagory, description])
                 f = open(f"{filepath}/config/bounties.json", "w")
                 f.write(json.dumps(v))
                 f.close()
@@ -64,12 +72,15 @@ class bounty(commands.Cog):
                     await ctx.send("Ok, added you to the bounty solver list")
 
         elif action in v:
-            embed=discord.Embed(title=action, description=f"${v[action][0]}", color=0x1e00ff)
-            embed.add_field(name="Category", value=f"{v[action][1]}", inline=False)
-            embed.add_field(name="Description", value=f"{v[action][2]}", inline=False)
-            embed.add_field(name="Takers", value=f"{len(j[action])}", inline=False)
+            embed = discord.Embed(
+                title=action, description=f"${v[action][0]}", color=0x1e00ff)
+            embed.add_field(name="Category",
+                            value=f"{v[action][1]}", inline=False)
+            embed.add_field(name="Description",
+                            value=f"{v[action][2]}", inline=False)
+            embed.add_field(
+                name="Takers", value=f"{len(j[action])}", inline=False)
             await ctx.send(embed=embed)
-
 
 
 def setup(bot: commands.Bot):

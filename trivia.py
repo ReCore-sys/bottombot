@@ -31,8 +31,10 @@ def text_on_img(filename='image.png', text="Hello", size=12):
     try:
         font = ImageFont.truetype("/Library/fonts/Arial.ttf", size)
     except:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", size)
-    image = Image.new(mode = "RGB", size = (int(size) * len(text), size + 50), color = (54, 57, 63))
+        font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/freefont/FreeMono.ttf", size)
+    image = Image.new(mode="RGB", size=(
+        int(size) * len(text), size + 50), color=(54, 57, 63))
     draw = ImageDraw.Draw(image)
     draw.text((10, 10), text, font=font, fill=(255, 255, 0))
     image.save(filename)
@@ -80,12 +82,12 @@ class trivia(commands.Cog):
         delay = 20
         list = []
         URL = "https://trivia.willfry.co.uk/api/questions?categories=geography,general_knowledge,history,literature,music,science,society_and_culture&limit=1"
-        r = requests.get(url = URL, timeout=2)
+        r = requests.get(url=URL, timeout=2)
         t = r.json()
         wrong = t[0]["incorrectAnswers"]
         answer = t[0]["correctAnswer"].strip()
         question = t[0]["question"]
-        time = datetime.now() + timedelta(seconds = delay)
+        time = datetime.now() + timedelta(seconds=delay)
         print(wrong)
         for x in wrong:
             list.append(x.strip())
@@ -99,7 +101,7 @@ class trivia(commands.Cog):
             title=('\n'.join(list)), description="\u200b")
         file = discord.File("image.png")
         e.set_image(url="attachment://image.png")
-        await ctx.send(file = file, embed=e)
+        await ctx.send(file=file, embed=e)
         await ctx.send(embed=embed)
         await asyncio.sleep(delay)
         if done == True:

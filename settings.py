@@ -1,7 +1,11 @@
-#A lib to check if certain settings are enabled for servers. Will be used to disable and enable features on a per-server basis
-import os, math, json
+# A lib to check if certain settings are enabled for servers. Will be used to disable and enable features on a per-server basis
+import os
+import math
+import json
 filepath = os.path.abspath(os.path.dirname(__file__))
-def check(serverid, action = "get", setting = None, val = None):
+
+
+def check(serverid, action="get", setting=None, val=None):
     try:
         f = open(f"{filepath}/serversettings/{serverid}/settings.json", "r")
         v = json.loads(f.read())

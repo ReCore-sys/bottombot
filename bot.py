@@ -176,7 +176,7 @@ async def on_message(message):
 
 
 @client.command()
-async def rewind(ctx, val = 1):
+async def rewind(ctx, val=1):
     if str(val).isnumeric():
         with open(f"{filepath}/serversettings/{ctx.guild.id}/replay.txt", "r") as f:
             lines = f.read().splitlines()
@@ -240,7 +240,7 @@ async def fox(ctx):
 async def pussy(ctx):
     while True:
         URL = "https://aws.random.cat/meow"
-        r = requests.get(url = URL)
+        r = requests.get(url=URL)
         t = r.json()
         if ".mp4" in t["file"]:
             pass
@@ -252,7 +252,7 @@ async def pussy(ctx):
 @client.command()
 async def dog(ctx):
     URL = "https://random.dog/woof.json"
-    r = requests.get(url = URL)
+    r = requests.get(url=URL)
     t = r.json()
     await ctx.send(t["url"])
 
@@ -260,7 +260,7 @@ async def dog(ctx):
 @client.command()
 async def xkcd(ctx):
     URL = f"https://xkcd.com/{random.randint(1,2400)}/info.0.json"
-    r = requests.get(url = URL)
+    r = requests.get(url=URL)
     t = r.json()
     await ctx.send(t["img"])
 
@@ -281,7 +281,7 @@ ttst = False
 
 
 @client.command()
-async def tts(ctx, val = None):
+async def tts(ctx, val=None):
     global ttst
     if val != None:
         if val == "on":
@@ -349,7 +349,7 @@ async def bb(ctx, *, args):
 
 
 @client.command()
-async def maths(ctx, *, val = None):
+async def maths(ctx, *, val=None):
     global ttst
     global s
     global appid
@@ -606,7 +606,8 @@ async def help(ctx, menu=None):
         for v in result[x]:
             result2[v] = result[x][v]
     if menu not in result2:
-        embed = discord.Embed(title="Help", description="Welcome to the help menu. Do -help <command> to see what an individual command does", color=0x1e00ff)
+        embed = discord.Embed(
+            title="Help", description="Welcome to the help menu. Do -help <command> to see what an individual command does", color=0x1e00ff)
         for x in result:
             list = []
             for v in result[x]:
@@ -616,7 +617,8 @@ async def help(ctx, menu=None):
 
         await ctx.send(embed=embed)
     else:
-        embed = discord.Embed(title=menu, description=result2[menu], color=0x1e00ff)
+        embed = discord.Embed(
+            title=menu, description=result2[menu], color=0x1e00ff)
         await ctx.send(embed=embed)
 
 

@@ -74,7 +74,8 @@ class cross(commands.Cog):
                     unicode = u"\uFF20"
                     message1 = message1.replace('@', unicode)
                     # msg = [address, "sender : message"]
-                    msg = [int(servers[message.channel.id]), f"{message.author} : {message1}"]
+                    msg = [int(servers[message.channel.id]),
+                           f"{message.author} : {message1}"]
                     messages.append(msg)
 
     @commands.command()
