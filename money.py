@@ -9,6 +9,7 @@ import discord.ext
 import botlib
 import humanfriendly
 import settings
+import shop
 import json
 from async_timeout import timeout
 from discord.ext import commands, tasks
@@ -17,7 +18,7 @@ from datetime import datetime, date, timedelta
 from num2words import num2words
 import operator
 import itemlist
-
+null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)
 m = TinyDB(f'{filepath}/config/money.json')
@@ -61,16 +62,16 @@ def balfind(dbid):  # function to find the balance of the id dbid
         val = re[0]
         return val['bal']
     except:
-        return None
+        return null
 
 
-def itemfind(dbid):  # function to find the balance of the id dbid
+def itemfind(dbid):  # function to find the inventory of the id dbid
     re = it.search(i.user == dbid)
     try:
         val = re[0]
         return val['items']
     except:
-        return None
+        return null
 
 
 def rankfind(dbid):  # same as above but for ranks, not bal
@@ -79,7 +80,7 @@ def rankfind(dbid):  # same as above but for ranks, not bal
         val = re[0]
         return (val['rank']).lower()
     except:
-        return None
+        return null
 
 
 def ranktoid(dbid):
@@ -120,18 +121,19 @@ def cap():
 # Diamond
 # Immortal
 # Accendant
-
+# region ranks
 ranks = {
     'bronze': 0,
     'silver': 750,
     'gold': 1500,
     'platinum': 5000,
     'diamond': 10000,
-    'demigod': 200000,
-    'immortal': 500000,
-    'ascendant': 1000000,
-    'taxman': 1500000  # dict for ranks against price
+    'demigod': 20000,
+    'immortal': 50000,
+    'ascendant': 100000,
+    'taxman': 150000  # dict for ranks against price
 }
+# region rank names but formatted
 rankup = {
     'bronze': 'Bronze',
     'silver': 'Silver',
@@ -143,6 +145,7 @@ rankup = {
     'ascendant': 'Ascendant',
     'taxman': 'Tax Man'  # dict for ranks against display name
 }
+# region rank ids
 rankids = {
     'bronze': 1,
     'silver': 2,
@@ -154,25 +157,26 @@ rankids = {
     'ascendant': 8,
     'taxman': 9  # rank compared to it's id. Usefull for permission levels
 }
+# region rank caps
 rankcap = {
     'bronze': 1000,
     'silver': 2000,
     'gold': 7500,
     'platinum': 12000,
     'diamond': 25000,
-    'demigod': 750000,
-    'immortal': 1000000,
-    'ascendant': 1750000,
-    'taxman': 2000000  # dict for ranks against price
+    'demigod': 75000,
+    'immortal': 100000,
+    'ascendant': 175000,
+    'taxman': 200000  # dict for ranks against price
 }
 
 cost = 50
-countdown = None
+countdown = null
 refresh = 10
 cycle = 0
 precost = 50
 leaderboard = []
-lb = None
+lb = null
 idtoname = {}
 
 
@@ -183,9 +187,9 @@ class money(commands.Cog):
 
     # shows the user's account
     @commands.command(aliases=["acc", "balance", "bal", "a"])
-    async def account(self, ctx, *, target: discord.Member = None):
+    async def account(self, ctx, *, target: discord.Member = null):
         if settings.check(ctx.message.guild.id, "get", "economy"):
-            if (target == None) and (balfind(ctx.message.author.id) == None):
+            if (target == null) and (balfind(ctx.message.author.id) == null):
                 m.insert({'user': ctx.message.author.id, 'bal': 100})
                 r.insert({'user': ctx.message.author.id, 'rank': "Bronze"})
                 s.insert({'user': ctx.message.author.id, 'stock': 0})
@@ -193,15 +197,15 @@ class money(commands.Cog):
                 # if the user does not have an account, create one
                 await ctx.send("Account created!")
 
-            elif (target != None) and (balfind(ctx.message.author.id) == None):
+            elif (target != null) and (balfind(ctx.message.author.id) == null):
                 # if the user pings someone who does not have an account, send this
                 await ctx.send("That user does not have an account set up")
-            elif (target != None) and (rankfind(ctx.message.author.id) == None):
+            elif (target != null) and (rankfind(ctx.message.author.id) == null):
                 # if the user pings someone who does not have an account, send this
                 await ctx.send("That user does not have an account set up")
 
             # show your balance if you don't enter someone else's account name
-            elif (target == None) and (balfind(ctx.message.author.id) != None):
+            elif (target == null) and (balfind(ctx.message.author.id) != null):
                 user = ctx.message.author
                 embed = discord.Embed(title=f"{user}",
                                       description="Account info",
@@ -224,7 +228,7 @@ class money(commands.Cog):
                 await ctx.send(embed=embed)
 
             # show someone else's account if you do ping someone
-            elif (target != None) and (balfind(ctx.message.author.id) != None):
+            elif (target != null) and (balfind(ctx.message.author.id) != null):
                 userid = int(botlib.nametoid(target.id))
                 username = ctx.guild.get_member(userid)
                 embed = discord.Embed(title=f"{target}",
@@ -249,15 +253,15 @@ class money(commands.Cog):
     async def pay(self,
                   ctx,
                   arg1,
-                  target: discord.Member = None):  # paying someone
+                  target: discord.Member = null):  # paying someone
         if settings.check(ctx.message.guild.id, "get", "economy"):
             # finds the balance of the sender
             urval = int(balfind(ctx.message.author.id))
             # finds the bal of the target
             thrval = int(balfind(int(target.id)))
             thrid = target.id  # target's ID
-            if target == None:
-                # if that user's balance is None, they don't exist
+            if target == null:
+                # if that user's balance is null, they don't exist
                 await ctx.send(
                     "Sorry, that person either does not exist or has not set up their account."
                 )
@@ -330,7 +334,7 @@ class money(commands.Cog):
     @commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
     async def daily(self, ctx):
         if settings.check(ctx.message.guild.id, "get", "economy"):
-            if balfind != None:
+            if balfind != null:
                 r = random.randint(20, 50)
                 if balfind(ctx.message.author.id) + r <= rankcap[rankfind(
                         ctx.message.author.id)]:
@@ -352,13 +356,13 @@ class money(commands.Cog):
             )
 
     @commands.command(aliases=["stock", "stonk", "stonks"])
-    async def stocks(self, ctx, action=None, count=None):
+    async def stocks(self, ctx, action=null, count=null):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             global stock
             global cost
             global countdown
             user = int(ctx.message.author.id)
-            if stockfind(user) == None:
+            if stockfind(user) == null:
                 await ctx.send(
                     "You need to create an account with -account first")
             else:
@@ -378,7 +382,7 @@ class money(commands.Cog):
                     timeto = countdown - datetime.now()
                 except:
                     pass
-                if action == None:
+                if action == null:
                     await ctx.send(
                         f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}"
                     )  # if no options are specified, show current price and hw many the user owns.
@@ -419,8 +423,8 @@ class money(commands.Cog):
     @commands.command(aliases=["ranks"])
     async def rank(self,
                    ctx,
-                   ag1=None,
-                   rank=None):  # allows someone to buy a rank
+                   ag1=null,
+                   rank=null):  # allows someone to buy a rank
         if settings.check(ctx.message.guild.id, "get", "economy"):
             global ranks  # idk if this is needed but it can't hurt to have it
             # "user" is easier to type than "ctx.message.author.id"
@@ -446,7 +450,7 @@ class money(commands.Cog):
                 crank = rankfind(int(user))
                 crankv = ranks[crank.lower()]
                 val = ranks[rank.lower()]
-                if rank == None:
+                if rank == null:
                     # if they don't enter a rank to buy
                     await ctx.send("Please choose a rank to buy")
                 elif (rank.lower() in ranks) == False:
@@ -481,7 +485,7 @@ class money(commands.Cog):
         global idtoname
         global ranks
         leaderboard = []
-        lb = None
+        lb = null
         lb = discord.Embed(title="Leaderboard",
                            description="Current leaderboard",
                            color=0xFFD700)
@@ -520,50 +524,23 @@ class money(commands.Cog):
         )
         await ctx.send(embed=lb)
 
-    @commands.command(aliases=["store", "shops"])
-    async def shop(self, ctx, *, action=None):
-        # returns a list of items and their prices from a list in an external lib
-        items = itemlist.items()
-        uitems = itemfind(ctx.message.author.id)
-        if action == None:  # if no options are enterd, show prices
-            embed = discord.Embed(title="Shop",
-                                  description="Current items in the store",
-                                  color=0xFFD700)
-            items = dict(sorted(items.items(), key=lambda item: item[1]))
-            for x in items:
-                embed.add_field(name=x, value=f"${items[x]}", inline=True)
-            await ctx.send(embed=embed)
-        else:
-            if action not in items:
-                await ctx.send("That is not a valid item")
-            elif action in uitems:
-                await ctx.send("You already own that")
-            elif items[action] > balfind(ctx.message.author.id):
-                await ctx.send("You don't have enough money")
-            else:
-                addmoney(ctx.message.author.id, 0 - items[action])
-                uitems.append(action)
-                it.update({"items": uitems},
-                          i.user == int(ctx.message.author.id))
-                # adds the item to the player's inventory.
-                await ctx.send(f"{action} bought for ${items[action]}")
-                # TODO Allow players to run their own shops with crafting items
-                # IDEA: How do players get materials to sell? If anyone can get the materials easily, there is no point in having shops so it needs an element of randomness. Myabe a lootbox sort of system? That could be interesting. Another option is you do stuff like -mine or -cut to get base materials. The base materials can then be crafted into more advanced stuff. -mine and -cut would have a cooldown. Also doing -mine would yeild stone, a small bit of metal, and very rarely gems. This way you have an element of randomness but can still be player directed. This could be interesting but would need HEAVY balancing.
-                # IDEA: the shops could be set up in a way so a new shop database is added and inside is this structure: {top level of dict: {user1id: [{item1: [amount, price]}, {item2: [amount, price]}]}}. This is a bit confusing but it would be a much more compact version of what it could be. Since it is using a database, it means we can use tinyDB's search function so people can search by user, item and price. I would also have a precompiled dict of everyone's id to their username so it doesn't lag heaps when opening the store and it has to find the name of every ID.
-                # IDEA: Possible idea is that people can run stores and shops as separate things. When you make a store you can set the tax rate (What percentage of the selling price will go to your account) for people's stalls. Less tax rate on stores would be more popular but you would get a lot more competition. It would be a decent way for people to earn money if they can afford it but don't wanna grind out materials. This needs some heavy refinement and won't be implemented straight away but could be an interesting idea for the future.
-                # IDEA: I would also need to divide shops up into pages. So we don't get every shop on 1 embed, it would shop 10 items at once and then you would go to the next page. Maybe bugger about with the menus lib? The method of doing this would probably be to compile the items into a list then devide it into a lot of parts, each made up of 10 items. Then add each one to a dict with the key being a number that increases for each page there is. Then just call that page number and loop throught the value to create an embed field. Might be pretty intense and I can't really precompile it but it would live update. I would also run a function every 10 mins to prune all shops with an item count of 0.
+    # IDEA: How do players get materials to sell? If anyone can get the materials easily, there is no point in having shops so it needs an element of randomness. Myabe a lootbox sort of system? That could be interesting. Another option is you do stuff like -mine or -cut to get base materials. The base materials can then be crafted into more advanced stuff. -mine and -cut would have a cooldown. Also doing -mine would yeild stone, a small bit of metal, and very rarely gems. This way you have an element of randomness but can still be player directed. This could be interesting but would need HEAVY balancing.
+    # IDEA: the shops could be set up in a way so a new shop database is added and inside is this structure: {top level of dict: {user1id: [{item1: [amount, price]}, {item2: [amount, price]}]}}. This is a bit confusing but it would be a much more compact version of what it could be. Since it is using a database, it means we can use tinyDB's search function so people can search by user, item and price. I would also have a precompiled dict of everyone's id to their username so it doesn't lag heaps when opening the store and it has to find the name of every ID.
+    # IDEA: Possible idea is that people can run stores and shops as separate things. When you make a store you can set the tax rate (What percentage of the selling price will go to your account) for people's stalls. Less tax rate on stores would be more popular but you would get a lot more competition. It would be a decent way for people to earn money if they can afford it but don't wanna grind out materials. This needs some heavy refinement and won't be implemented straight away but could be an interesting idea for the future.
+    # IDEA: I would also need to divide shops up into pages. So we don't get every shop on 1 embed, it would shop 10 items at once and then you would go to the next page. Maybe bugger about with the menus lib? The method of doing this would probably be to compile the items into a list then devide it into a lot of parts, each made up of 10 items. Then add each one to a dict with the key being a number that increases for each page there is. Then just call that page number and loop throught the value to create an embed field. Might be pretty intense and I can't really precompile it but it would live update. I would also run a function every 10 mins to prune all shops with an item count of 0.
 
     @commands.command(aliases=["inventory", "i"])
     async def inv(self, ctx):
         user = ctx.message.author
         head, sep, tail = str(user).partition('#')
-        uitems = itemfind(ctx.message.author.id)
+        uitems = shop.owneditems(ctx.message.author.id)[
+            str(ctx.message.author.id)]
         embed = discord.Embed(title=f"{head}'s Items",
                               description="Owned items",
                               color=0x8800ff)
         embed.set_thumbnail(url=user.avatar_url)
         for x in uitems:
-            embed.add_field(name=x, value="\u200b", inline=True)
+            embed.add_field(name=x, value=uitems[x], inline=True)
         await ctx.send(embed=embed)
 
     @tasks.loop(seconds=60 * refresh)
@@ -575,14 +552,6 @@ class money(commands.Cog):
         global leaderboard
         global lb
         global idtoname
-        f = open(f'{filepath}/config/money.json')
-        loaded = dict(json.load(f))
-        v = dict(loaded["_default"])
-        c = 0
-        for x in v:
-            if c <= 5:
-                idtoname[v[x]['user']] = await self.bot.fetch_user(v[x]['user']
-                                                                   )
         cycle = cycle + 1
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
@@ -595,7 +564,14 @@ class money(commands.Cog):
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at ${cost}")
         )
-        f.close()
+
+        with open(f'{filepath}/config/money.json') as f:
+            loaded = dict(json.load(f))
+            v = dict(loaded["_default"])
+            c = 0
+            for x in v:
+                if c <= 5:
+                    idtoname[v[x]['user']] = await self.bot.fetch_user(v[x]['user'])
 
 
 def setup(bot: commands.Bot):

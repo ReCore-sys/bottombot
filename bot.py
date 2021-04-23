@@ -19,7 +19,21 @@ import cleverbotfree.cbfree
 import json
 import settings
 import helplib
-# pylint: disable=E501
+print("\u001b[32;1m")
+print(  # noqa: W506,E261,E291
+"""
+
+ ______                            ______
+|  __  \       _   _              |  __  \       _
+| |__)  ) ___ | |_| |_  ___  ____ | |__)  ) ___ | |_
+|  __  ( / _ \|  _)  _)/ _ \|    \|  __  ( / _ \|  _)
+| |__)  ) |_| | |_| |_| |_| | | | | |__)  ) |_| | |__
+|______/ \___/ \___)___)___/|_|_|_|______/ \___/ \___)
+
+
+""")
+
+
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
 filepath = os.path.abspath(os.path.dirname(__file__))
 # more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
@@ -61,6 +75,7 @@ async def on_ready():
     client.load_extension("modules")
     client.load_extension("bounty")
     client.load_extension("trivia")
+    client.load_extension("shop")
 
 
 @client.event
@@ -161,14 +176,12 @@ async def on_message(message):
                 f.close()
         except:
             pass
-    elif message.content == "around the world":
-        for _ in range(300):
-            await message.channel.send("Around the world")
-            time.sleep(0.5)
+    elif message.content == "hello there":
+        await message.channel.send("General Kenobi")
     r = random.randint(0, 14)
     u = message.author.id
     if (r == 9) and (message.author.id != 758912539836547132):
-        if money.balfind(u) != None:
+        if money.balfind(u) != null:
             money.addmoney(u, random.randint(1, 5))
             print(f"\u001b[32m$1 was added to {message.author}\u001b[31m")
     # this breaks everything if removed. I don't advise it.
@@ -281,9 +294,9 @@ ttst = False
 
 
 @client.command()
-async def tts(ctx, val=None):
+async def tts(ctx, val=null):
     global ttst
-    if val != None:
+    if val != null:
         if val == "on":
             ttst = True
         else:
@@ -349,13 +362,13 @@ async def bb(ctx, *, args):
 
 
 @client.command()
-async def maths(ctx, *, val=None):
+async def maths(ctx, *, val=null):
     global ttst
     global s
     global appid
     fval = val.replace('-steps', '')
     if botlib.check_banned(ctx):
-        if val == None:
+        if val == null:
             await ctx.send("You need to give me some maths")
         else:
             try:
@@ -434,8 +447,8 @@ async def reboot(ctx):
         # command to reboot the bot. Only I can use it.
         await ctx.send("Lol nah")
 
-pingC = None
-pingU = None
+pingC = null
+pingU = null
 
 
 @client.command()
@@ -495,9 +508,9 @@ async def update(ctx, *, args):
 
 
 @client.command()
-async def search(ctx, *, val=None):
+async def search(ctx, *, val=null):
     if settings.check(ctx.message.guild.id, "get", "search"):
-        if val == None:
+        if val == null:
             await ctx.send("You need to give me a query")
         else:
             isbad2 = better_profanity.profanity.contains_profanity(val)
@@ -541,8 +554,8 @@ async def search(ctx, *, val=None):
 
 
 @client.command()
-async def image(ctx, *, val=None):
-    if val == None:
+async def image(ctx, *, val=null):
+    if val == null:
         await ctx.send("Sorry, You need to give me a query to search for")
     else:
         if settings.check(ctx.message.guild.id, "get", "image"):
@@ -598,7 +611,7 @@ async def bottomgear(ctx):
 
 
 @client.command()
-async def help(ctx, menu=None):
+async def help(ctx, menu=null):
     result = dict(helplib.help(menu))
     result2 = {}
     for x in result:

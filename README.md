@@ -1,4 +1,4 @@
-# Bottombot
+# Bottombot [![Generic badge](https://img.shields.io/discord/812144785199857725?style=for-the-badge)](https://shields.io/)[![Generic badge](https://img.shields.io/github/last-commit/ReCore-sys/bottombot/main?style=for-the-badge)](https://shields.io/)
 
 Look, I'm sorry ok. This bot works. It turns on and does stuff. It's an absolute disgrace to the programming community and we would be better off without it.
 

@@ -24,10 +24,16 @@ def help(cmd=None):
             "daily": "earns you between $20 and $50. Has a 24 hour cooldown.",
             "leaderboard": "Shows the top 5 economy users and your standing. Compiles current value, stock value and rank price",
             "bounty": "Shows current bounties. Do -bounty <bounty name> to see more info and -bounty take <name> to take the bounty",
-            "shop": "(-shop or -shop <item>)\nShows the shop and the prices. You can buy items by specifying the item. Item names are case sensitive",
-            "inventory": "Shows your owned items",
+
             "trivia": "Sends a trivia question. You have 10 seconds to send your answer. First person to correctly answer gets 30 to 50 dollars.",
             "stocks": "([buy/sell] <number to buy/sell or 'all'>) \nRunning without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks"},
+        "Resources (In beta)": {
+            "buy": "(buy <item> [amount])\nAllows you to buy base materials. If no parameters specified it will show base materials alongside their prices",
+            "shop": "(shop <item name>\nshop buy <store id> [amount])\nShows the store or allows you to buy items off another player. [amount] defaults to 1",
+            "sell": "(sell <item> <price> [amount])\nPuts your items up on the shop. If no amount is specified it will default to 1 ",
+            "craft": "(craft [item])\nYou can craft items. If none specified will show all available items to craft and what they need",
+            "inventory": "Shows your owned items"},
+
         "Other": {
             "bottomgear": "Prints out a randomly generated bottomgear meme. Probably NSFW.",
             "search": "Does a google search for something. Needs rank Gold or above to use.",
