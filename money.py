@@ -17,7 +17,6 @@ from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
 from num2words import num2words
 import operator
-import itemlist
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)

@@ -15,7 +15,6 @@ from tinydb import TinyDB, Query
 from datetime import datetime, date, timedelta
 from num2words import num2words
 import operator
-import itemlist
 from collections import OrderedDict
 from operator import getitem
 null = None
@@ -31,17 +30,19 @@ wares = {
 crafts = {
     # Any line that starts with a hash (#) is a comment; what is on that line does not impact the code. It is used to describe the code so feel free to add your own
 
+    # The first part of the craft syntax is the name. In the template below it is is example. The second part is the ingrediants. Each item inside it conatains the item type, the amount needed and whether or not to consume the ingrediant on craft. If True it will bo consumed and if it is False it will not. If you leave the third section blank it will default to consuming the item
+
     # To add you own crafts is very simple. Just copy the template from below without the hashes of course.
 
-    # "example": [["metal", 3], ["wood", 2]],
+    # "example": [["metal", 3, True], ["wood", 2, True]],
 
     # just replace the "example" with what you want the name of the new item
     # names are case sensitive so make sure you get it right. Also the commas, brackets and quote marks are vital so make sure you don't leave them out. You also need to add a comma to the end of each item
     # you can also have other crafted items as ingrediants (eg, one item called "oil" and you need 10 oil to make a car). Its pretty easy to do this; just change the ingrediant's name to that of another material
     # example:
 
-    # "oil": [["wood": 10], ["metal": 8]],
-    # "car": [["oil": 10], ["metal":10]],
+    # "oil": [["wood", 10, True], ["metal", 8, True]],
+    # "car": [["oil", 10], ["metal", 10]], (Even though this one does not have the consume specifier, it will still consume it)
 
     # that would be a valid item
     # if you have a github account simply fork the repo (look up how), add the new items then create a pull requests and ping me on discord.
@@ -51,9 +52,11 @@ crafts = {
     # 2. no offesive stuff
     # 3. Please don't have people as an option since we will be selling them. Thats not legal anymore
     # 4. Keep it inside the curly brackets
-    "steel": [["metal", 4], ["stone", 2]],
-    "fire": [["stone", 2], ["wood", 5]],
-    "furnace": [["stone", 20], ["wood", 6], ["steel", 2]],
+
+    "steel": [["metal", 4, True], ["stone", 2, True]],
+    "fire": [["stone", 2, True], ["wood", 5, True]],
+    "furnace": [["stone", 20, True], ["wood", 6, True], ["steel", 2, True], ["fire", 1]],
+    "sword": [["steel", 5], ["furnace", 1, False], ["wood", 1]]
 }
 
 
@@ -285,10 +288,11 @@ class shop(commands.Cog):
             json.dump(sorted1, open(f'{filepath}/config/shops.json', "w"))
 
     @commands.command()
-    async def craft(self, ctx, action1=null, action2=1, action3=null):
+    async def craft(self, ctx, action1=null, action2=1):
+        # action1: the item's name
+        # action2: how many to craft
         with open(f'{filepath}/config/items.json', "r") as loc:
             items = json.load(loc)
-            print(items)
             cancraft = True
             cneeded = null
             chave = null
@@ -309,39 +313,45 @@ class shop(commands.Cog):
             else:
                 if action2 != null:
                     action2 = int(action2)
-                for y in crafts[action1]:
-                    for x in y:
-                        for r in crafts[action1]:
-                            if owneditems(ctx.message.author.id, r[0]) >= (r[1] * action2):
-                                pass
-                            else:
-                                cancraft = False
-                                chave = owneditems(
-                                    ctx.message.author.id, r[0])
-                                cneeded = r[1] * action2
-                                ctype = r[0]
-
-                if cancraft:
+                try:
                     for y in crafts[action1]:
-                        print(f"1 {y}")
-                        items[str(ctx.message.author.id)][y[0]] = (items[str(
-                            ctx.message.author.id)][y[0]] - (y[1] * action2))
+                        for x in y:
+                            for r in crafts[action1]:
+                                if owneditems(ctx.message.author.id, r[0]) >= (r[1] * action2):
+                                    pass
+                                else:
+                                    cancraft = False
+                                    chave = owneditems(
+                                        ctx.message.author.id, r[0])
+                                    cneeded = r[1] * action2
+                                    ctype = r[0]
 
-                    with open(f'{filepath}/config/items.json', "r") as uitems:
-                        uitems = json.load(uitems)
-                        uitems[str(ctx.message.author.id)
-                               ] = items[str(ctx.message.author.id)]
-                        try:
-                            items[str(ctx.message.author.id)][action1] = (items[str(
-                                ctx.message.author.id)][action1] + action2)
-                        except KeyError:
-                            items[str(ctx.message.author.id)
-                                  ][action1] = action2
-                        json.dump(uitems, open(
-                            f'{filepath}/config/items.json', "w"))
-                        await ctx.send(f"{action1} crafted!")
-                else:
-                    await ctx.send(f"Sorry, you have {chave} {ctype} and you need {cneeded}")
+                    if cancraft:
+                        for y in crafts[action1]:
+                            try:
+                                if y[2] == True:
+                                    items[str(ctx.message.author.id)][y[0]] = (items[str(
+                                        ctx.message.author.id)][y[0]] - (y[1] * action2))
+                            except:
+                                pass
+
+                        with open(f'{filepath}/config/items.json', "r") as uitems:
+                            uitems = json.load(uitems)
+                            uitems[str(ctx.message.author.id)
+                                   ] = items[str(ctx.message.author.id)]
+                            try:
+                                items[str(ctx.message.author.id)][action1] = (items[str(
+                                    ctx.message.author.id)][action1] + action2)
+                            except KeyError:
+                                items[str(ctx.message.author.id)
+                                      ][action1] = action2
+                            json.dump(uitems, open(
+                                f'{filepath}/config/items.json', "w"))
+                            await ctx.send(f"{action2} {action1} crafted!")
+                    else:
+                        await ctx.send(f"Sorry, you have {chave} {ctype} and you need {cneeded}")
+                except:
+                    pass
 
 
 def setup(bot: commands.Bot):
