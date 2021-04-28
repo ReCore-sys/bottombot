@@ -171,7 +171,7 @@ rankcap = {
 
 cost = 50
 countdown = null
-refresh = 10
+refresh = 20
 cycle = 0
 precost = 50
 leaderboard = []
@@ -530,17 +530,20 @@ class money(commands.Cog):
 
     @commands.command(aliases=["inventory", "i"])
     async def inv(self, ctx):
-        user = ctx.message.author
-        head, sep, tail = str(user).partition('#')
-        uitems = shop.owneditems(ctx.message.author.id)[
-            str(ctx.message.author.id)]
-        embed = discord.Embed(title=f"{head}'s Items",
-                              description="Owned items",
-                              color=0x8800ff)
-        embed.set_thumbnail(url=user.avatar_url)
-        for x in uitems:
-            embed.add_field(name=x, value=uitems[x], inline=True)
-        await ctx.send(embed=embed)
+        try:
+            user = ctx.message.author
+            head, sep, tail = str(user).partition('#')
+            uitems = shop.owneditems(ctx.message.author.id)[
+                str(ctx.message.author.id)]
+            embed = discord.Embed(title=f"{head}'s Items",
+                                  description="Owned items",
+                                  color=0x8800ff)
+            embed.set_thumbnail(url=user.avatar_url)
+            for x in uitems:
+                embed.add_field(name=x, value=uitems[x], inline=True)
+            await ctx.send(embed=embed)
+        except:
+            await ctx.send("Your inventory is empty")
 
     @tasks.loop(seconds=60 * refresh)
     async def cost(self):
@@ -555,9 +558,9 @@ class money(commands.Cog):
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
         if rand > cost:
-            cost = cost + random.uniform(1, 5)
+            cost = cost + random.uniform(1, 2)
         else:
-            cost = cost - random.uniform(1, 5)
+            cost = cost - random.uniform(1, 2)
         cost = round(cost, 2)
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(
