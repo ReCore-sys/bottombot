@@ -150,6 +150,7 @@ class shop(commands.Cog):
                                     file1[id][item] = file1[str(
                                         id)][item] + itemcount
                                 await ctx.send(f"{itemcount} {item} bought for ${itemcount * wares[item]}")
+                                money.addmoney(ctx.message.author.id, (0 - (itemcount * wares[item])))
                             json.dump(file1, open(
                                 f'{filepath}/config/items.json', "w"))
 

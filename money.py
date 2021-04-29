@@ -189,6 +189,7 @@ class money(commands.Cog):
     async def account(self, ctx, *, target: discord.Member = null):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if (target == null) and (balfind(ctx.message.author.id) == null):
+
                 m.insert({'user': ctx.message.author.id, 'bal': 100})
                 r.insert({'user': ctx.message.author.id, 'rank': "Bronze"})
                 s.insert({'user': ctx.message.author.id, 'stock': 0})
@@ -206,6 +207,10 @@ class money(commands.Cog):
             # show your balance if you don't enter someone else's account name
             elif (target == null) and (balfind(ctx.message.author.id) != null):
                 user = ctx.message.author
+                try:
+                    rankfind(ctx.message.author.id)
+                except:
+                    r.insert({'user': ctx.message.author.id, 'rank': "Bronze"})
                 embed = discord.Embed(title=f"{user}",
                                       description="Account info",
                                       color=0x8800ff)
@@ -229,6 +234,10 @@ class money(commands.Cog):
             # show someone else's account if you do ping someone
             elif (target != null) and (balfind(ctx.message.author.id) != null):
                 userid = int(botlib.nametoid(target.id))
+                try:
+                    rankfind(ctx.message.author.id)
+                except:
+                    r.insert({'user': userid, 'rank': "Bronze"})
                 username = ctx.guild.get_member(userid)
                 embed = discord.Embed(title=f"{target}",
                                       description="Account info",

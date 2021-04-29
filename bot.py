@@ -112,7 +112,7 @@ async def on_guild_join(guild):  # this is called when the bot joins a new serve
     for channel in guild.text_channels:
         if canwelcome == True:
             if channel.permissions_for(guild.me).send_messages:
-                await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot \nUse -help to find out what commands I can use!')
+                await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bott \nUse -help to find out what commands I can use!')
             break
     f = open(f"{filepath}/template.json", "r")
     dict = f.read()
@@ -216,7 +216,7 @@ async def on_guild_leave(guild):
 
 @client.command()
 async def invite(ctx):
-    await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=3324992&scope=bot")
+    await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bott")
 
 
 @client.command()
