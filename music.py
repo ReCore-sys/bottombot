@@ -693,8 +693,6 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(aliases=['eq'])
     async def equalizer(self, ctx: commands.Context, *, equalizer: str):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(
-            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -equaliser {args}\n")
         f.close()
         """Change the players equalizer."""
         player: Player = self.bot.wavelink.get_player(
@@ -761,8 +759,6 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
     @commands.command(aliases=['swap'])
     async def swap_dj(self, ctx: commands.Context, *, member: discord.Member = None):
         f = open(f"{filepath}/logs.txt", "a")
-        f.write(
-            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -swap {args}\n")
         f.close()
         """Swap the current DJ to another member in the voice channel."""
         player: Player = self.bot.wavelink.get_player(

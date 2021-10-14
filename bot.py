@@ -1,24 +1,24 @@
 
+import datetime
+import json
 import os
+import platform
 import random
 import time
-import better_profanity
-import async_cse
-import discord
-import datetime
 import urllib.parse
-import requests
-import wolframalpha
-import platform
-from discord.ext import menus, commands
-from translate import Translator
+
+import async_cse
+import better_profanity
 import botlib
 import bottomlib
-import money
-import cleverbotfree.cbfree
-import json
-import settings
+import discord
 import helplib
+import money
+import requests
+import settings
+from discord.ext import commands, menus
+from translate import Translator
+
 print("\u001b[32;1m")
 print(  # noqa: W506,E261,E291
 """
@@ -49,12 +49,11 @@ client = discord.Client()
 f = open(f"{filepath}/config/prefix.txt")
 prefix = str(f.readline())  # Modular prefix
 f.close()
-client = commands.Bot(command_prefix=prefix)
+client = commands.Bot(command_prefix="-")
 canwelcome = False
 client.remove_command('help')
 starttime = null
 appid = "APXP5R-JWJV4JW87W"
-cb = cleverbotfree.cbfree.Cleverbot()
 
 
 @client.event
@@ -74,7 +73,6 @@ async def on_ready():
     client.load_extension("cross")
     client.load_extension("modules")
     client.load_extension("bounty")
-    client.load_extension("trivia")
     client.load_extension("shop")
 
 
@@ -112,7 +110,7 @@ async def on_guild_join(guild):  # this is called when the bot joins a new serve
     for channel in guild.text_channels:
         if canwelcome == True:
             if channel.permissions_for(guild.me).send_messages:
-                await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bott \nUse -help to find out what commands I can use!')
+                await channel.send('Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bot \nUse -help to find out what commands I can use!')
             break
     f = open(f"{filepath}/template.json", "r")
     dict = f.read()
@@ -163,9 +161,12 @@ async def on_member_join(member):
 async def on_message(message):
     if '<@' in message.content:
         try:
-            os.system(f'mkdir serversettings/{message.guild.id}')
-            # this makes the relevant folders for any servers that don't already have a serversettings entry.
-            os.system(f"touch serversettings/{message.guild.id}/replay.txt")
+            if message.guild.id not in os.listdir("serversettings"):
+                os.system(f'mkdir serversettings/{message.guild.id}')
+                # this makes the relevant folders for any servers that don't already have a serversettings entry.
+            if "replay.txt" not in os.listdir(f"serversettings/{message.guild.id}"):
+                os.system(
+                    f"touch serversettings/{message.guild.id}/replay.txt")
             if message.author != client.user:
                 pingC = (message.content).encode("utf-8", "ignore")
                 pingC = pingC.decode("utf-8", "ignore")
@@ -216,7 +217,7 @@ async def on_guild_leave(guild):
 
 @client.command()
 async def invite(ctx):
-    await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bott")
+    await ctx.send("Server: https://discord.gg/2WaddNnuHh \nBot invite:  https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bot")
 
 
 @client.command()
@@ -318,7 +319,7 @@ async def upgrade(ctx):
         await ctx.send("Only ReCore can upgrade servers for now")
 canbb = True
 
-
+"""
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def bb(ctx, *, args):
@@ -359,6 +360,7 @@ async def bb(ctx, *, args):
                     await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
     else:
         await ctx.send("Sorry, the chatbot is disabled for this server")
+"""
 
 
 @client.command()
@@ -427,7 +429,6 @@ async def info(ctx):
 @client.command()
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
-        cb.browser.close()
         exit()
     else:
         # command to turn off the bot. Only I can use it.
@@ -439,7 +440,6 @@ async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
         print("\u001b[0mRebooting \u001b[0m")
         os.system(f"python {filepath}/bot.py")
-        cb.browser.close()
         # os.kill("java.exe")
         # os.kill("cmd.exe")
         exit()
@@ -464,9 +464,9 @@ async def game(ctx, args):
 
 @client.command()
 async def bucketlist(ctx):
-    list = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power",
+    lst = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power",
                          "willfully depriving a protected person of the right to a fair trial if accused of a war crime.", "taking of hostages", "extensive destruction and appropriation of property not justified by military necessity and carried out unlawfully and wantonly", "unlawful deportation, transfer, or confinement."])
-    await ctx.send(list)
+    await ctx.send(lst)
 
 
 @client.command()

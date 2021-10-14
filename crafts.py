@@ -10,8 +10,8 @@ def chance(n):
 
 
 def recipes():
-    # region Recipes
-    crafts = {
+
+    return {
         # Any line that starts with a hash (#) is a comment; what is on that line does not impact the code. It is used to describe the code so feel free to add your own
 
         # The first part of the craft syntax is the name. In the template below it is is example. The second part is the ingrediants. Each item inside it conatains the item type, the amount needed and whether or not to consume the ingrediant on craft. If True it will bo consumed and if it is False it will not. If you leave the third section blank it will default to consuming the item. The third part of the main recipe (not inside an ingrediant) is how long it takes to craft in seconds. The forth is how many you get from crafting it. If left blank it will default to one. The fith part is the alternative result. If specified, the result will be the fith part, not the name of the recipe.
@@ -60,7 +60,6 @@ def recipes():
         "electric-forge": [[["wire", 15], ["circuits", 10], ["iron-plate", 20], ["copper-plate", 20], ["anvil", 1, False], ["forge", 1]], 120],
         "silicon": [[["sand", 10], ["electric-forge", 1, False]], 20],
         "iron-pick": [[["iron-plate", 3], ["organics", 1], ["electric-forge", 1, False]], 60],
-        "salt-peter": [[["sand"]]],
         "copper-ore-level-2": [[["iron-pick", 1, False]], 5, 10, "copper-ore"],
         "coal-level-2": [[["friend", 5, chance(2)], ["iron-pick", 5]], 45, 20, "coal"],
         "loom": [[["organics", 5], ["iron-ore", 2]], 15],
@@ -92,48 +91,5 @@ def recipes():
         "stone-level-3": [[["mining-system", 1, chance(100)], ["friend", 10, chance(30)], ["water", 20]], 20, 100, "stone"],
         "coal-level-3": [[["mining-system", 1, chance(100)], ["friend", 10, chance(30)], ["water", 20]], 20, 100, "coal"],
         "rootyle": [[["mining-system", 1, chance(50)], ["friend", 10, chance(30)], ["water", 20]], 20, 100, "titanium-ore"],
-        "buxite": [[["mining-system", 1, chance(50)], ["friend", 10, chance(30)], ["water", 20]], 20, 100, "aluminium-ore"],
-        "soviet-titanium": [[["mining-system", 1, chance(50)], ["friend", 10, chance(30)], ["vodka", 20]], 20, 100],
-        "assembler-mk2": [[["assembler", 2], ["h8", 1], ["plastic", 10], ["friend", 1]], 50, 1],
-        "steel": [[["iron", 10], ["coal", 10]], 30, 5],
-        "cnc-mill": [[["assembler-mk2", 1, False], ["plastic", 20]], 60, 1],
-        "titanium-bar": [[["arc-forge", 1, False], ["titanium-ore", 20]], 50, 5],
-        "aluminium-bar": [[["arc-forge", 1, False], ["aluminium-ore", 20]], 50, 5],
-        "titanium-alloy": [[["arc-forge", 1, False], ["steel", 10], ["titanium", 10]], 100, 5],
-        "pressure-chamber": [[["titanium-alloy", 30], ["aluminium-bar", 10], ["small-shitty-engine", 1], ["h8", 1], ["friend", 1]], 250, 1],
-        "oil-level-two": [[["organics", 10], ["pressure-chamber", 1, False]], 30, 1],
-        "coal-level-two": [[["organics", 10], ["pressure-chamber", 1, False]], 30, 1],
-        "engine-block": [[["iron-plate", 20], ["cnc-mill", 1, False]], 120, 1],
-        "piston": [[["iron-plate", 2], ["assembler-mk2", 1, False]], 120, 1],
-        "valve": [[["iron-plate", 1], ["assembler-mk2", 1, False]], 60, 1],
-        "engine-oil": [[["oil", 1]], 1, 1],
-        "small-shitty-engine": [[["engine-block", 1], ["piston", 1], ["valve", 2]], 120, 1],
-        "inline-4": [[["engine-block", 2], ["piston", 4]["engine-oil", 4], ["valve", 8]], 180, 1],
-        "v-6": [[["engine-block", 3], ["piston", 6]["engine-oil", 6], ["valve", 12]], 240, 1],
-        "v-8": [[["engine-block", 4], ["piston", 8]["engine-oil", 8], ["valve", 16]], 300, 1],
-        "merlin": [[["engine-block", 6], ["piston", 12]["engine-oil", 12], ["valve", 24]], 360, 1],
-        "lawn-mower-case": [[["plastic", 10], ["assembler-mk2"]], 10, 1],
-        "car-body": [[["cnc-mill", 1, False], ["assembler-mk2", 1, False], ["aluminium-bar", 50], ["plastic", 10], ["glass", 5]], 60, 1],
-        "spitfire": [[["merlin", 1], ["aluminium-bar", 200], ["oil", 50], ["friend", 10, chance(5)]], 600, 1],
-        "server": [[["aluminium-bar", 20], ["plastic", 10], ["water", 20], ["gaming-computer", 10], ["wire", 30], ["friend", 10]], 160, 1],
-        "assembler-mk3": [[["v-6", 1], ["server", 1], ["engine-oil", 10], ["assembler-mk2", 3], ["cnc-mill", 3], ["titanium-alloy", 50], ["glass", 10], ["friend", 5]], 200, 1],
-        "quarry": [[["mining-system", 5], ["pressure-chamber", 5], ["iron-pick", 50], ["water", 50], ["friend", 50], ["vodka", 50]], 40, 1],
-        "gold-ore": [[["quarry", 1, False], ["engine-oil", 10]], 60, 100],
-        "litium": [[["water", 100], ["quarry", 1, False]], 90, 100],
-        "acid": [[["water", 10], ["vodka", 1], ["assembler-mk3"]], 10, 5],
-        "uranium": [[["quarry", 1], ["acid", 10]], 90, 100],
-        "graphite": [[["coal", 20], ["pressure-chamber", 1, False]], 90, 2],
-        "battery": [[["litium", 50], ["graphite", 10]], 30, 1],
-        "diamond": [[["graphite", 10], ["assembler-mk3", 1, False], ["pressure-chamber", 1]], 300, 1],
-        "vodka-level-2": [[["bottle", 100], ["organics", 100], ["pressure-chamber", 1, False]], 10, 100],
-        "pipe": [[["assembler-mk3", 1, False], ["titanium-bar", 20]], 10, 10],
-        "heat-sink": [[["aluminium-bar", 20], ["pipe", 10], ["assembler-mk3", 1, False], ["cnc-mill", 1, False]], 40, 1],
-        "cooling-system": [[["heat-sink", 2], ["pipe", 10], ["assembler-mk3", 1, False], ["vodka", 10]], 30, 1],
-        "gold-bar": [[["gold-ore", 20], ["arc-forge", 1, False]], 10, 10],
-        "gold-wire": [[["assembler-mk3", 1, False], ["gold-bar", 10]], 10, 10],
-        "high-speed-conector": [[[]]]
-
-        "will-to-live"[[["motivation", 999]], 99999999999, 1],  # delete this and i remove your nan
-        "motivation"[[["will-to-live", 999]], 99999999999, 1],
+        "piston-engine": [[["iron-plate", 20]]]
     }
-    return crafts

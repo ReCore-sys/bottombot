@@ -1,20 +1,21 @@
+import asyncio
+import datetime
+import json
 import os
 import random
 import time
-import async_cse
-import discord
-import datetime
 import urllib.parse
-import requests
-from discord.ext import menus, commands
+from datetime import date, datetime, timedelta
+
+import async_cse
 import botlib
 import bottomlib
-import money
-import json
-import settings
+import discord
 import helplib
-import asyncio
-from datetime import datetime, date, timedelta
+import money
+import requests
+import settings
+from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
 time = None
@@ -25,6 +26,7 @@ winner = None
 winnerid = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 cap = money.cap()
+used = []
 
 
 def text_on_img(filename='image.png', text="Hello", size=12):
@@ -52,24 +54,30 @@ class trivia(commands.Cog):
         global done
         global winner
         global winnerid
+        global used
+        whole = wrong
+        whole.append(answer)
         if message.author.id != 822023355947155457:
             if done == False:
                 try:
                     if datetime.now() <= time:
                         if message.content == answer:
-                            await message.channel.send("That was right!")
-                            done = True
-                            winner = message.author
-                            winnerid = message.author.id
-                            answer = None
+                            if message.author.id not in used:
+                                await message.channel.send("That was right!")
+                                done = True
+                                winner = message.author
+                                winnerid = message.author.id
+                                answer = None
                     elif datetime.now() > time:
                         if message.content == answer:
-                            print("too late!")
+                            print("Too late!")
                             answer = None
                 except:
                     pass
             elif message.content == answer:
                 await message.channel.send("Sorry, it has already been answered")
+        if message.content in whole:
+            used.append(message.author.id)
 
     @commands.command()
     async def trivia(self, ctx):
@@ -79,10 +87,12 @@ class trivia(commands.Cog):
         global done
         global winner
         global winnerid
+        global used
+        used = []
         delay = 20
         list = []
         URL = "https://trivia.willfry.co.uk/api/questions?categories=geography,general_knowledge,history,literature,music,science,society_and_culture&limit=1"
-        r = requests.get(url=URL, timeout=2)
+        r = requests.get(url=URL)
         t = r.json()
         wrong = t[0]["incorrectAnswers"]
         answer = t[0]["correctAnswer"].strip()
@@ -94,14 +104,10 @@ class trivia(commands.Cog):
         list.append(answer)
         print(list)
         random.shuffle(list)
-        text_on_img(text=question, size=500)
-        img = discord.File("image.png")
-        e = discord.Embed()
         embed = discord.Embed(
-            title=('\n'.join(list)), description="\u200b")
-        file = discord.File("image.png")
-        e.set_image(url="attachment://image.png")
-        await ctx.send(file=file, embed=e)
+            title=question, description="\u200b")
+        for x in list:
+            embed.add_field(name=x, value="\u200b")
         await ctx.send(embed=embed)
         await asyncio.sleep(delay)
         if done == True:

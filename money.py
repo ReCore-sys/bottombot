@@ -1,9 +1,6 @@
 import os
-import asyncio
 import math
 import random
-import time
-import async_cse
 import discord
 import discord.ext
 import botlib
@@ -282,9 +279,10 @@ class money(commands.Cog):
             # if either you have less than $1 or you try and pay more than you have
             elif (int(arg1) >= urval) or (urval - int(arg1) < 0):
                 await ctx.send("Sorry, you don't have enough money")
-            elif balfind(thrid) + arg1 > rankcap[rankfind(thrid)]:
+            elif balfind(thrid) + int(arg1) > int(rankcap[rankfind(thrid)]):
                 await ctx.send("Sorry, that goes over their wallet cap")
             else:  # if you can actually pay them
+                arg1 = int(arg1)
                 urval = urval - int(arg1)  # takes the amount from your bal
                 thrval = thrval + int(arg1)  # adds the amount to their bal
                 m.update({"bal": urval}, i.user == (ctx.message.author.id))
@@ -571,6 +569,14 @@ class money(commands.Cog):
         else:
             cost = cost - random.uniform(1, 2)
         cost = round(cost, 2)
+        randomchance = random.randint(1, 1000)
+        if randomchance == 1:
+            cost += 50
+        elif randomchance == 2:
+            if (cost - 50) < 10:
+                cost = 10
+            else:
+                cost -= 50
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at ${cost}")
