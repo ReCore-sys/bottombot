@@ -26,7 +26,8 @@ def help(cmd=None):
             "bounty": "Shows current bounties. Do -bounty <bounty name> to see more info and -bounty take <name> to take the bounty",
 
             "trivia": "Sends a trivia question. You have 10 seconds to send your answer. First person to correctly answer gets 30 to 50 dollars.",
-            "stocks": "([buy/sell] <number to buy/sell or 'all'>) \nRunning without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks"},
+            "stocks": "([buy/sell] <number to buy/sell or 'all'>) \nRunning without args shows the current stock price. Selling or buying's cost is dependant on the current price of stocks",
+            "prices": "Shows the prices of stocks over time in a graph"},
         "Resources (In beta)": {
             "buy": "(buy <item> [amount])\nAllows you to buy base materials. If no parameters specified it will show base materials alongside their prices",
             "shop": "(shop <item name>\nshop buy <store id> [amount])\nShows the store or allows you to buy items off another player. [amount] defaults to 1",

@@ -1,19 +1,24 @@
-import os
+import json
 import math
+import operator
+import os
 import random
+from datetime import date, datetime, timedelta
+
 import discord
 import discord.ext
-import botlib
 import humanfriendly
-import settings
-import shop
-import json
+import matplotlib.pyplot as plt
 from async_timeout import timeout
 from discord.ext import commands, tasks
-from tinydb import TinyDB, Query
-from datetime import datetime, date, timedelta
 from num2words import num2words
-import operator
+from tinydb import Query, TinyDB
+from io import BytesIO
+
+import botlib
+import settings
+import shop
+
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)
@@ -168,12 +173,13 @@ rankcap = {
 
 cost = 50
 countdown = null
-refresh = 20
+refresh = 10
 cycle = 0
 precost = 50
 leaderboard = []
 lb = null
 idtoname = {}
+prices = list()
 
 
 class money(commands.Cog):
@@ -552,6 +558,20 @@ class money(commands.Cog):
         except:
             await ctx.send("Your inventory is empty")
 
+    @commands.command()
+    async def prices(self, ctx):
+        global prices
+        print(prices)
+        costs = [x[0] for x in prices]
+        cycles = [x[1] for x in prices]
+        plt.plot(cycles, costs)
+        plt.xlabel('Number of price changes')
+        plt.ylabel('Price')
+        with BytesIO() as img_bin:
+            plt.savefig(img_bin, format='png')
+            img_bin.seek(0)
+            await ctx.send(file=discord.File(fp=img_bin, filename=f'{ctx.author.name}.png'))
+
     @tasks.loop(seconds=60 * refresh)
     async def cost(self):
         global cost
@@ -561,13 +581,14 @@ class money(commands.Cog):
         global leaderboard
         global lb
         global idtoname
+        global prices
         cycle = cycle + 1
         countdown = datetime.now() + timedelta(minutes=refresh)
         rand = random.randint(1, 100)
         if rand > cost:
-            cost = cost + random.uniform(1, 2)
+            cost = cost + random.uniform(1, 1.75)
         else:
-            cost = cost - random.uniform(1, 2)
+            cost = cost - random.uniform(1, 1.75)
         cost = round(cost, 2)
         randomchance = random.randint(1, 1000)
         if randomchance == 1:
@@ -577,6 +598,7 @@ class money(commands.Cog):
                 cost = 10
             else:
                 cost -= 50
+        prices.append((cost, cycle))
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at ${cost}")
