@@ -5,10 +5,8 @@ import os
 import platform
 import random
 import time
-import urllib.parse
+import re
 
-import async_cse
-import better_profanity
 import botlib
 import bottomlib
 import discord
@@ -18,10 +16,14 @@ import requests
 import settings
 from discord.ext import commands, menus
 from translate import Translator
+import openai
+import secrets
+
+openai.api_key = secrets.openaikey
 
 print("\u001b[32;1m")
-print(  # noqa: W506,E261,E291
-"""
+print(
+    """
 
  ______                            ______
 |  __  \       _   _              |  __  \       _
@@ -38,18 +40,21 @@ print(  # noqa: W506,E261,E291
 filepath = os.path.abspath(os.path.dirname(__file__))
 # more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 badsearch = ["isis", "taliban", "cp", "bomb", "ied", "explosive"]
-f = open(f"{filepath}/config/token.txt")
 # Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
-token = str(f.readline())
-f.close()
+
+if os.name != "nt":
+    token = secrets.token
+    prefix = "-"
+    print("Running linux")
+else:
+    token = secrets.test_token
+    prefix = "_"
+    print("Running windows")
 null = None  # so I can write "null" instead of "None" and look like hackerman
 
 
 client = discord.Client()
-f = open(f"{filepath}/config/prefix.txt")
-prefix = str(f.readline())  # Modular prefix
-f.close()
-client = commands.Bot(command_prefix="-")
+client = commands.Bot(command_prefix=prefix)
 canwelcome = False
 client.remove_command('help')
 starttime = null
@@ -64,7 +69,10 @@ async def on_ready():
         status = random.choice(["ReCore's CPU catch fire", "the old gods die", "missiles fly",
                                "the CCCP commit horrific crimes", "bentosalad on twitch", "RealArdan on twitch"])
         await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
-    client.load_extension("music")
+    try:
+        client.load_extension("music")
+    except:
+        print("Uh oh")
     print("\u001b[35mThe bot is up\u001b[31m")
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
@@ -161,7 +169,7 @@ async def on_member_join(member):
 async def on_message(message):
     if '<@' in message.content:
         try:
-            if message.guild.id not in os.listdir("serversettings"):
+            if str(message.guild.id) not in os.listdir(f"{filepath}/serversettings"):
                 os.system(f'mkdir serversettings/{message.guild.id}')
                 # this makes the relevant folders for any servers that don't already have a serversettings entry.
             if "replay.txt" not in os.listdir(f"serversettings/{message.guild.id}"):
@@ -319,87 +327,57 @@ async def upgrade(ctx):
         await ctx.send("Only ReCore can upgrade servers for now")
 canbb = True
 
-"""
+
 @client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
+@commands.cooldown(1, 3, commands.BucketType.guild)
 async def bb(ctx, *, args):
-    global ttst
+    regexs = [r"n[.]+r",
+              r"r(.)pe",
+              r"n[.]+a\s"]
     if settings.check(ctx.message.guild.id, "get", "bb"):
-        async with ctx.channel.typing():
-            if canbb == False:
-                await ctx.send("No, fuck off")
-            else:
-                ctx.message.channel.typing()
-                if money.ranktoid(ctx.message.author.id) >= 2:
-                    if botlib.check_banned:
-                        try:
-                            cb.browser.get(cb.url)
-                        except:
-                            print("There was an error so we exited")
-                            await ctx.send("Something isn't working right")
-                            cb.browser.close()
-                        try:
-                            cb.get_form()
-                        except:
-                            print("There was an error so we exited")
-                            await ctx.send("Something isn't working right")
-                        userInput = args
-                        cb.send_input(userInput)
-                        bot = cb.get_response()
-                        print(
-                            f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
-                        f = open(f"{filepath}/logs.txt", "a")
-                        f.write(
-                            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
-                        f.close()
-                        await ctx.send(bot)
-                    else:
-                        # there are a few people banned from using this command. These are their ids
-                        await ctx.send(botlib.nope)
+
+        if botlib.check_banned(ctx):
+            async with ctx.channel.typing():
+                if canbb == False:
+                    await ctx.send("No, fuck off")
                 else:
-                    await ctx.send("Sorry, you don't have" + ' a high enough rank. You will need to buy silver. Use "-rank" to see the price')
+                    ctx.message.channel.typing()
+                    with open(filepath + "/convfile.txt") as f:
+                        response = openai.Completion.create(
+                            engine="curie",
+                            prompt=(f.read()).format(args),
+                            temperature=0.9,
+                            max_tokens=100,
+                            top_p=1,
+                            frequency_penalty=0,
+                            presence_penalty=0.6,
+                            stop=[" Human:", " AI:", "\n"]
+
+                        )
+                    bot = response.choices[0].text
+                    print(
+                        f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
+                    f = open(f"{filepath}/logs.txt", "a")
+                    f.write(
+                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n")
+                    f.close()
+                    await ctx.reply(bot)
+        else:
+            # there are a few people banned from using this command. These are their ids
+            await ctx.reply(botlib.nope())
     else:
         await ctx.send("Sorry, the chatbot is disabled for this server")
-"""
 
 
-@client.command()
-async def maths(ctx, *, val=null):
-    global ttst
-    global s
-    global appid
-    fval = val.replace('-steps', '')
-    if botlib.check_banned(ctx):
-        if val == null:
-            await ctx.send("You need to give me some maths")
-        else:
-            try:
-                equation = fval
-                query = urllib.parse.quote_plus(f"solve {equation}")
-                query_url = f"https://api.wolframalpha.com/v2/query?" \
-                            f"appid={appid}" \
-                            f"&input={query}" \
-                            f"&scanner=Solve" \
-                            f"&podstate=Result__Step-by-step+solution" \
-                            "&format=plaintext" \
-                            f"&output=json"
-
-                r = requests.get(query_url).json()
-
-                data = r["queryresult"]["pods"][0]["subpods"]
-                result = data[0]["plaintext"]
-                steps = data[1]["plaintext"]
-
-                await ctx.send(f"**Result of {equation} is '{result}'.**\n")
-                if "-steps" in val:
-                    await ctx.send(f"Possible steps to solution:\n\n{steps}")
-            except:
-                await ctx.send("That didn't work. Not sure why. Probably some 'Key Error: pods' BS.")
-    else:
-        await ctx.send(botlib.nope)
+@bb.error
+async def bb(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(
+            f"AI is on a cooldown. Try again in {round(error.retry_after, 1)} seconds"
+        )
 
 
-@client.command()
+@ client.command()
 async def ping(ctx):
     time_1 = time.perf_counter()
     await ctx.trigger_typing()
@@ -411,11 +389,12 @@ async def ping(ctx):
     print("\u001b[33;1mDone: ping = " + str(ping))
 
 
-@client.command()
+@ client.command()
 async def info(ctx):
     embed = discord.Embed(
         title="Bottombot", description="If it works let me know. I'd be pretty suprised.", color=0x8800ff)
-    embed.add_field(name="Creator", value="<@451643725475479552>", inline=True)
+    embed.add_field(name="Creator",
+                    value="<@451643725475479552>", inline=True)
     embed.add_field(
         name="Reason", value="I was bored and want to make a bot", inline=False)
     embed.add_field(name="Functionality?", value="no", inline=False)
@@ -426,7 +405,7 @@ async def info(ctx):
     await ctx.send(embed=embed)
 
 
-@client.command()
+@ client.command()
 async def cease(ctx):
     if ctx.message.author.id == 451643725475479552:
         exit()
@@ -435,7 +414,7 @@ async def cease(ctx):
         await ctx.send("Lol nah")
 
 
-@client.command()
+@ client.command()
 async def reboot(ctx):
     if ctx.message.author.id == 451643725475479552:
         print("\u001b[0mRebooting \u001b[0m")
@@ -451,25 +430,12 @@ pingC = null
 pingU = null
 
 
-@client.command()
+@ client.command()
 async def trans(ctx):
     await ctx.send(":transgender_flag: Trans rights are human rights :transgender_flag: ")
 
 
-@client.command()
-async def game(ctx, args):
-    query = urllib.parse.quote(args)
-    await ctx.send(f"https://www.g2a.com/search?query={query}")
-
-
-@client.command()
-async def bucketlist(ctx):
-    lst = random.choice(["willful killing, torture or inhumane treatment, including biological experiments", "willfully causing great suffering or serious injury to body or health", "compelling a protected person to serve in the armed forces of a hostile power",
-                         "willfully depriving a protected person of the right to a fair trial if accused of a war crime.", "taking of hostages", "extensive destruction and appropriation of property not justified by military necessity and carried out unlawfully and wantonly", "unlawful deportation, transfer, or confinement."])
-    await ctx.send(lst)
-
-
-@client.command()
+@ client.command()
 async def cf(ctx):
     await ctx.send(random.choice(["Heads", "Tails"]))
 
@@ -507,99 +473,12 @@ async def update(ctx, *, args):
             await address.send(args)"""
 
 
-@client.command()
-async def search(ctx, *, val=null):
-    if settings.check(ctx.message.guild.id, "get", "search"):
-        if val == null:
-            await ctx.send("You need to give me a query")
-        else:
-            isbad2 = better_profanity.profanity.contains_profanity(val)
-            if money.ranktoid(ctx.message.author.id) >= 3:
-
-                if ((isbad2) or (val in badsearch)):
-                    badresponse = random.choice(["This is why your parents don't love you", "Really?",
-                                                "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
-                    await ctx.send(badresponse)
-                    print(
-                        f"\u001b[33;1m{ctx.message.author} tried to search '{val}'\u001b[31m")
-
-                elif (val.find("urbandictionary")):
-                    await ctx.send("Lol no")
-
-                elif "://" in val:
-                    await ctx.send("You think I'm stupid? Don't answer that.")
-
-                if botlib.check_banned(ctx):
-                    # create the Search client (uses Google by default-)
-                    client = async_cse.Search(
-                        "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
-                    # returns a list of async_cse.Result objects
-                    results = await client.search(val, safesearch=True)
-                    first_result = results[0]  # Grab the first result
-                    if "urbandictionary" in first_result.url:
-                        await ctx.send("Thanks to <@567522840752947210>, urban dictionary is banned")
-                    else:
-                        await ctx.send(f"**{first_result.title}**\n{first_result.url}")
-                        await client.close()
-                        f = open(f"{filepath}/logs.txt", "a")
-                        f.write(
-                            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !search {val} -> {first_result.url}\n")
-                        f.close()
-                else:
-                    await ctx.send(botlib.nope)
-            else:
-                await ctx.send("You don't have a high enough rank for this")
-    else:
-        await ctx.send("Sorry, searches are disabled for this server")
-
-
-@client.command()
-async def image(ctx, *, val=null):
-    if val == null:
-        await ctx.send("Sorry, You need to give me a query to search for")
-    else:
-        if settings.check(ctx.message.guild.id, "get", "image"):
-            isbad2 = better_profanity.profanity.contains_profanity(val)
-            if money.ranktoid(ctx.message.author.id) >= 3:
-
-                if ((isbad2 == True) or (val in badsearch)):
-                    badresponse = random.choice(["This is why your parents don't love you", "Really?",
-                                                "You are just an asshole. You know that?", "God has abandoned us", "Horny bastard"])
-                    await ctx.send(badresponse)
-                    print(
-                        f"\u001b[33;1m{ctx.message.author} tried to search '{val}'\u001b[31m")
-
-                elif botlib.check_banned(ctx):
-                    # create the Search client (uses Google by default-)
-                    client = async_cse.Search(
-                        "AIzaSyAIc3NVCXoMDUzvY4sTr7hPyRQREdPUVg4")
-                    # returns a list of async_cse.Result objects
-                    results = await client.search(val, safesearch=True)
-                    first_result = results[0]  # Grab the first result
-                    if "urbandictionary" in first_result.image_url:
-                        await ctx.send("Thanks to <@567522840752947210>, urban dictionary == banned")
-                    else:
-                        await ctx.send(f"{first_result.image_url}")
-                        await client.close()
-                        f = open(f"{filepath}/logs.txt", "a")
-                        f.write(
-                            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -search {val} -> {first_result.image_url}\n")
-                        f.close()
-
-                else:
-                    await ctx.send(botlib.nope)
-            else:
-                await ctx.send("You don't have a high enough rank for this")
-        else:
-            await ctx.send("Sorry, image searches are disabled for this server")
-
-
-@client.command()
+@ client.command()
 async def duck(ctx):
     await ctx.send("https://coorongcountry.com.au/wp-content/uploads/2016/01/Pacific-Black-Duck-53-cm.png")
 
 
-@client.command()
+@ client.command()
 async def bottomgear(ctx):
     global ttst
     output = bottomlib.bottomchoice()
@@ -610,7 +489,7 @@ async def bottomgear(ctx):
     f.close()
 
 
-@client.command()
+@ client.command()
 async def help(ctx, menu=null):
     result = dict(helplib.help(menu))
     result2 = {}

@@ -7,7 +7,10 @@ import math
 import random
 import re
 import typing
-import wavelink
+try:
+    import wavelink
+except:
+    print("we fucked up")
 from discord.ext import commands, menus
 import os
 filepath = os.path.abspath(os.path.dirname(__file__))

@@ -19,7 +19,7 @@ with open(f"{filepath}/config/BannedIDs.txt", "r") as f:
 
 
 def check_banned(ctx):
-    if ctx.author.id in banned_ids:
+    if ctx.author.id in [int(x) for x in open(f"{filepath}/config/BannedIDs.txt", "r").readlines()]:
         return False
     return True
 
