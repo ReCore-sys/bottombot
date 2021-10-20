@@ -10,16 +10,15 @@ import re
 import botlib
 import bottomlib
 import discord
-import helplib
 import money
 import requests
 import settings
 from discord.ext import commands, menus
 from translate import Translator
 import openai
-import secrets
+import secret_data
 
-openai.api_key = secrets.openaikey
+openai.api_key = secret_data.openaikey
 
 print("\u001b[32;1m")
 print(
@@ -43,11 +42,11 @@ badsearch = ["isis", "taliban", "cp", "bomb", "ied", "explosive"]
 # Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
 
 if os.name != "nt":
-    token = secrets.token
+    token = secret_data.token
     prefix = "-"
     print("Running linux")
 else:
-    token = secrets.test_token
+    token = secret_data.test_token
     prefix = "_"
     print("Running windows")
 null = None  # so I can write "null" instead of "None" and look like hackerman
@@ -77,11 +76,9 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    client.load_extension("money")
-    client.load_extension("cross")
-    client.load_extension("modules")
-    client.load_extension("bounty")
-    client.load_extension("shop")
+    modules = ["money", "cross", "modules", "bounty", "shop"]
+    for x in modules:
+        client.load_extension(x)
 
 
 @client.event
@@ -331,9 +328,7 @@ canbb = True
 @client.command()
 @commands.cooldown(1, 3, commands.BucketType.guild)
 async def bb(ctx, *, args):
-    regexs = [r"n[.]+r",
-              r"r(.)pe",
-              r"n[.]+a\s"]
+    lastresp, lastinp = str(), str()
     if settings.check(ctx.message.guild.id, "get", "bb"):
 
         if botlib.check_banned(ctx):
@@ -342,19 +337,37 @@ async def bb(ctx, *, args):
                     await ctx.send("No, fuck off")
                 else:
                     ctx.message.channel.typing()
-                    with open(filepath + "/convfile.txt") as f:
-                        response = openai.Completion.create(
-                            engine="curie",
-                            prompt=(f.read()).format(args),
-                            temperature=0.9,
-                            max_tokens=100,
-                            top_p=1,
-                            frequency_penalty=0,
-                            presence_penalty=0.6,
-                            stop=[" Human:", " AI:", "\n"]
+                    if lastinp != "":
+                        with open(filepath + "/convfile.txt") as f:
+                            response = openai.Completion.create(
+                                engine="davinci",
+                                prompt=(f.read()).format(
+                                    lastinp, lastresp, args),
+                                temperature=0.9,
+                                max_tokens=100,
+                                top_p=1,
+                                frequency_penalty=0,
+                                presence_penalty=0.6,
+                                stop=[" Human:", " AI:", "\n"]
 
-                        )
+                            )
+                    else:
+                        with open(filepath + "/convfile.txt") as f:
+                            response = openai.Completion.create(
+                                engine="davinci",
+                                prompt=(f.read()).format(
+                                    "Hey", "Hi there", args),
+                                temperature=0.9,
+                                max_tokens=100,
+                                top_p=1,
+                                frequency_penalty=0,
+                                presence_penalty=0.6,
+                                stop=[" Human:", " AI:", "\n"]
+
+                            )
                     bot = response.choices[0].text
+                    lastresp = bot
+                    lastinp = args
                     print(
                         f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
                     f = open(f"{filepath}/logs.txt", "a")
@@ -491,7 +504,7 @@ async def bottomgear(ctx):
 
 @ client.command()
 async def help(ctx, menu=null):
-    result = dict(helplib.help(menu))
+    result = json.load(open(f"{filepath}/help.json"))
     result2 = {}
     for x in result:
         list = []

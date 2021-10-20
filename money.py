@@ -5,7 +5,8 @@ import operator
 import os
 import random
 from datetime import date, datetime, timedelta
-import secrets
+import sqlite3
+import secret_data
 import threading
 import requests
 
@@ -152,6 +153,13 @@ ranks = {
     }
 
 }
+v = 50
+loops = 10000
+upchance = 1
+downchance = 10
+decay = 0.2
+reducedecay = 0.999
+decays = []
 
 namestorank = dict()
 
@@ -235,7 +243,7 @@ class money(commands.Cog):
             # to a 3.8TB image of heavy from tf2 then crashing this whole thing
             img = img.resize((178, 178))
             # Give me a red border and everyone else a black one. Cos I wanna be special.
-            if tuser.id in secrets.admins:
+            if tuser.id in secret_data.admins:
                 img = ImageOps.expand(img, border=5, fill='red')
             else:
                 img = ImageOps.expand(img, border=5, fill='black')
@@ -512,14 +520,15 @@ class money(commands.Cog):
         lb = discord.Embed(title="Leaderboard",
                            description="Current leaderboard",
                            color=0xFFD700)
-        f = open(f'{filepath}/config/money.json')
-        loaded = dict(json.load(f))
-        v = dict(loaded["_default"])
-        for x in v:  # compiles the price of stocks, balance and their rank to work out their net worth.
-            totalval = (v[x]['bal']) + (stockfind((v[x]['user'])) * cost)
-            totalval = totalval + ranks[rankfind((v[x]['user']))]
+        db = sqlite3.Connection(filepath + "/data.db")
+        cur = db.cursor()
+        cur.execute("select id,money,stocks from user")
+        resp = cur.fetchall()
+        for id, money, stocks in resp:
+            totalval = (money) + (int(stocks) * cost)
+            totalval = totalval + ranks[rankfind(id)]["price"]
             totalval = round(totalval, 2)
-            leaderboard.append(((v[x]['user']), totalval))
+            leaderboard.append((id, totalval))
 
         leaderboard = sorted(leaderboard,  # sorts the net worths of everyone into order.
                              key=operator.itemgetter(1),
@@ -583,6 +592,8 @@ class money(commands.Cog):
             img_bin.seek(0)
             await ctx.send(file=discord.File(fp=img_bin, filename=f'{ctx.author.name}.png'))
 
+    v = 50
+
     @tasks.loop(minutes=refresh)
     async def cost(self):
         global cost
@@ -593,28 +604,49 @@ class money(commands.Cog):
         global lb
         global idtoname
         global prices
+        global upchance, downchance, upordown, v, decay
         print(f"Refresh: {refresh}")
+        #
+        #
+        #
+        # =========================================================================== #
+        #                            Price maths
+        # =========================================================================== #
         cycle = cycle + 1
         countdown = datetime.now() + timedelta(minutes=refresh)
-        rand = random.randint(1, 100)
-        if rand > cost:
-            cost = cost + random.uniform(1, 1.75)
+        upordown = random.choices(["up", "down"], (upchance, downchance), k=1)
+        if upordown[0] == "up":
+            v += random.uniform(1, 1.25)
+            upchance -= random.uniform(1, 5)
+            downchance += random.uniform(1, 5)
+            if upchance < 0:
+                upchance = 0
         else:
-            cost = cost - random.uniform(1, 1.75)
-        cost = round(cost, 2)
-        randomchance = random.randint(1, 1000)
-        if randomchance == 1:
-            cost += 50
-        elif randomchance == 2:
-            if (cost - 50) < 10:
-                cost = 10
+            v -= random.uniform(1, 1.25)
+            upchance += random.uniform(1, 5)
+            downchance -= random.uniform(1, 5)
+            if downchance < 0:
+                downchance = 0
+        if v > 100:
+            v -= decay
+            if v > 100:
+                decay = decay * 1.25
             else:
-                cost -= 50
-        prices.append((cost, cycle))
+                decay = decay * reducedecay
+        if decay < 0:
+            decay = 0
+        cost = round(v, 2)
+        prices.append((v, cycle))
+        #
+        #
+        #
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at ${cost}")
         )
+        for x in sql.getall("id", mode="field"):
+            user = await self.bot.fetch_user(x[0])
+            idtoname[x[0]] = user.name
 
 
 def setup(bot: commands.Bot):
