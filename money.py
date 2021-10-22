@@ -1,4 +1,4 @@
-from ast import alias
+from ast import Return, alias
 import json
 import math
 import operator
@@ -188,7 +188,7 @@ class money(commands.Cog):
     @commands.check(doesexist)
     @commands.command(aliases=["acc", "balance", "bal", "a"])
     async def account(self, ctx, *, target: discord.Member = null):
-        banner = Image.open(f"{filepath}/static/banner.png")
+
         if settings.check(ctx.message.guild.id, "get", "economy"):
             # If no target was specified set yourself as the target
             if target == null:
@@ -216,6 +216,10 @@ class money(commands.Cog):
                     await ctx.send("That user does not have an account set up")
                     return
             # Load the path to the user's image, even if it does not exist
+            if str(tid) in os.listdir(filepath + "/static/banners"):
+                banner = Image.open(f"{filepath}/static/banners/{tid}")
+            else:
+                banner = Image.open(f"{filepath}/static/banner.png")
             imagepath = f"{filepath}/static/userimgs/{tuser.id}"
 
             # If we don't have the user's image, get it
@@ -254,7 +258,9 @@ class money(commands.Cog):
             # Stick the user's icon onto it now
             banner.paste(img, [45, 45])
             # Set up the snake based drawing tablet
-            d = ImageDraw.Draw(banner)
+            d = ImageDraw.Draw(banner, mode="RGBA")
+            d.rectangle(((240, 25), (600, 243)), fill=(
+                255, 255, 255, 100), outline="black")
             # Write the user's bal on there
             d.text((250, 75), f"Balance: ${bal}", fill="black", font=font)
             # MMMMM STONKS
@@ -481,7 +487,7 @@ class money(commands.Cog):
             else:  # if they do have it, start doing stuff
                 crank = rankfind(int(user))
                 crankv = ranks[crank]["price"]
-                val = ranks[namestorank['rank']]["price"]
+                val = ranks[namestorank[rank]]["price"]
                 if rank == null:
                     # if they don't enter a rank to buy
                     await ctx.send("Please choose a rank to buy")
@@ -493,7 +499,7 @@ class money(commands.Cog):
                     await ctx.send("You do not have enough money to buy this")
                 elif crankv > val:
                     await ctx.send("You can't buy a lower rank")
-                elif crankv == int(ranks[rank.lower()]):
+                elif crankv == int(ranks[namestorank[rank.lower()]]["price"]):
                     await ctx.send("You can't buy your current rank")
                 else:
                     cost = 0 - val  # turn the value into a negative so you can buy it properly
@@ -616,13 +622,13 @@ class money(commands.Cog):
         countdown = datetime.now() + timedelta(minutes=refresh)
         upordown = random.choices(["up", "down"], (upchance, downchance), k=1)
         if upordown[0] == "up":
-            v += random.uniform(1, 1.25)
+            v += random.uniform(0, 1)
             upchance -= random.uniform(1, 5)
             downchance += random.uniform(1, 5)
             if upchance < 0:
                 upchance = 0
         else:
-            v -= random.uniform(1, 1.25)
+            v -= random.uniform(0, 1)
             upchance += random.uniform(1, 5)
             downchance -= random.uniform(1, 5)
             if downchance < 0:
@@ -647,6 +653,35 @@ class money(commands.Cog):
         for x in sql.getall("id", mode="field"):
             user = await self.bot.fetch_user(x[0])
             idtoname[x[0]] = user.name
+
+    def is_url_image(self, image_url):
+        image_formats = ("image/png", "image/jpeg", "image/jpg")
+        r = requests.head(image_url)
+        if r.headers["content-type"] in image_formats:
+            return True
+        return False
+
+    @commands.command()
+    async def banner(self, ctx, *, args):
+        bal = sql.get(ctx.author.id, "money")
+        if bal >= 1000:
+            if self.is_url_image(args):
+                size = requests.get(
+                    args, stream=True).headers['Content-length']
+                if size > 50000000:
+                    await ctx.send("That image is too big")
+                    return
+                data = requests.get(args).content
+                f = open(filepath + "/static/banners/" +
+                         str(ctx.author.id), "wb")
+                f.write(data)
+                f.close()
+                await ctx.send("Banner image was updated!")
+                sql.take(1000, ctx.author.id, "money")
+            else:
+                print("Not an image")
+        else:
+            await ctx.send("Not enough money")
 
 
 def setup(bot: commands.Bot):

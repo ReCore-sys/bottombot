@@ -109,7 +109,7 @@ waiting = {}
 class shop(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.crafter.start()
+        # self.crafter.start()
 
     @commands.command()
     async def buy(self, ctx, item=null, itemcount=1):
@@ -150,7 +150,8 @@ class shop(commands.Cog):
                                     file1[id][item] = file1[str(
                                         id)][item] + itemcount
                                 await ctx.send(f"{itemcount} {item} bought for ${itemcount * wares[item]}")
-                                money.addmoney(ctx.message.author.id, (0 - (itemcount * wares[item])))
+                                money.addmoney(
+                                    ctx.message.author.id, (0 - (itemcount * wares[item])))
                             json.dump(file1, open(
                                 f'{filepath}/config/items.json', "w"))
 
@@ -178,7 +179,8 @@ class shop(commands.Cog):
                                     # what to actually run if they can buy the item
                                     with open(f'{filepath}/config/shops.json', "r") as loc2:
                                         file2 = json.load(loc2)
-                                        storeid = random.randint(100000, 999999)
+                                        storeid = random.randint(
+                                            100000, 999999)
                                         for x in file2:
                                             usedids.append(x)
 
@@ -283,7 +285,8 @@ class shop(commands.Cog):
                 tosend = {}
                 for x in sorted1:
                     if sorted1[x]["item"] == action1:
-                        tosend[x] = [sorted1[x]['price'], sorted1[x]['itemcount'], sorted1[x]['username']]
+                        tosend[x] = [sorted1[x]['price'], sorted1[x]
+                                     ['itemcount'], sorted1[x]['username']]
                 try:
                     chopped = shred(tosend, 2)
                     for v in chopped:
@@ -374,7 +377,8 @@ class shop(commands.Cog):
                         for y in crafts[action1][0]:
                             take = True
                             print(f"y = {y}")
-                            print(f"conf = {items[str(ctx.message.author.id)][y[0]]}")
+                            print(
+                                f"conf = {items[str(ctx.message.author.id)][y[0]]}")
                             try:
                                 if y[2] == False:
                                     take = False
@@ -415,27 +419,27 @@ class shop(commands.Cog):
                     # except:
                     #    print("uhhhhh")
 
-    @tasks.loop(seconds=3)  # I would have it as 1 second, but that causes a fair bit of lag so every 3.
-    async def crafter(self):
-        global waiting
-        if waiting != {}:
-            print(f"waiting = {waiting}")
-        v = []
-        with open(f'{filepath}/config/items.json', "r") as loc:
-            items = json.load(loc)
-            for x in waiting:
-                if datetime.now() >= waiting[x][0]:
-                    try:
-                        items[str(waiting[x][1])][waiting[x][2]] = owneditems(waiting[x][1], waiting[x][2]) + waiting[x][3]
-                    except KeyError:
-                        items[str(waiting[x][1])][waiting[x]
-                                                  [2]] = waiting[x][3]
-                    v.append(x)
-                    user = await self.bot.fetch_user(waiting[x][1])
-                    await user.send(f"Your {waiting[x][3]} {waiting[x][2]} has finished crafting")
-            for x in v:
-                waiting.pop(x)
-            json.dump(items, open(f'{filepath}/config/items.json', "w"))
+#    @tasks.loop(seconds=3)  # I would have it as 1 second, but that causes a fair bit of lag so every 3.
+#    async def crafter(self):
+#        global waiting
+#        if waiting != {}:
+#            print(f"waiting = {waiting}")
+#        v = []
+#        with open(f'{filepath}/config/items.json', "r") as loc:
+#            items = json.load(loc)
+#            for x in waiting:
+#                if datetime.now() >= waiting[x][0]:
+#                    try:
+#                        items[str(waiting[x][1])][waiting[x][2]] = owneditems(waiting[x][1], waiting[x][2]) + waiting[x][3]
+#                    except KeyError:
+#                        items[str(waiting[x][1])][waiting[x]
+#                                                  [2]] = waiting[x][3]
+#                    v.append(x)
+#                    user = await self.bot.fetch_user(waiting[x][1])
+#                    await user.send(f"Your {waiting[x][3]} {waiting[x][2]} has finished crafting")
+#            for x in v:
+#                waiting.pop(x)
+#            json.dump(items, open(f'{filepath}/config/items.json', "w"))
 
 
 def setup(bot: commands.Bot):

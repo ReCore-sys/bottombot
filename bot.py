@@ -17,6 +17,7 @@ from discord.ext import commands, menus
 from translate import Translator
 import openai
 import secret_data
+import sqlbullshit
 
 openai.api_key = secret_data.openaikey
 
@@ -40,6 +41,8 @@ filepath = os.path.abspath(os.path.dirname(__file__))
 # more bad words to limit searches, cos I really don't trust people. These are mostly just to stop people from getting me on CIA watchlists, as opposed to googling "boobies"
 badsearch = ["isis", "taliban", "cp", "bomb", "ied", "explosive"]
 # Gets the token from another text file so I don't have to leave the token in this file where anyone can read it
+
+sql = sqlbullshit.sql(filepath + "/data.db", "user")
 
 if os.name != "nt":
     token = secret_data.token
@@ -313,61 +316,36 @@ async def tts(ctx, val=null):
 
 
 @client.command()
-async def upgrade(ctx):
-    if ctx.author.id == 451643725475479552:
-        f = open(f"{filepath}/config/premium.txt", "a")
-        f.write(str(ctx.guild.id))
-        f.write("\n")
-        f.close()
-        await ctx.send("Server upgraded!")
-    else:
-        await ctx.send("Only ReCore can upgrade servers for now")
-canbb = True
-
-
-@client.command()
-@commands.cooldown(1, 3, commands.BucketType.guild)
+@commands.cooldown(5, 25, commands.BucketType.guild)
 async def bb(ctx, *, args):
     lastresp, lastinp = str(), str()
     if settings.check(ctx.message.guild.id, "get", "bb"):
 
         if botlib.check_banned(ctx):
             async with ctx.channel.typing():
-                if canbb == False:
-                    await ctx.send("No, fuck off")
+                tokens = len(args) / 4
+                if tokens >= 75:
+                    await ctx.send("Sorry, that input was too big. Please try something smaller")
+                    return
+                if sql.get(ctx.author.id, "money") < 10:
+                    await ctx.send("Sorry, you need more money to use the bot")
                 else:
+                    sql.take(10, ctx.author.id, "money")
                     ctx.message.channel.typing()
-                    if lastinp != "":
-                        with open(filepath + "/convfile.txt") as f:
-                            response = openai.Completion.create(
-                                engine="davinci",
-                                prompt=(f.read()).format(
-                                    lastinp, lastresp, args),
-                                temperature=0.9,
-                                max_tokens=100,
-                                top_p=1,
-                                frequency_penalty=0,
-                                presence_penalty=0.6,
-                                stop=[" Human:", " AI:", "\n"]
+                    with open(filepath + "/convfile.txt") as f:
+                        response = openai.Completion.create(
+                            engine="davinci",
+                            prompt=(f.read()).format(
+                                lastinp),
+                            temperature=0.9,
+                            max_tokens=100,
+                            top_p=1,
+                            frequency_penalty=0,
+                            presence_penalty=0.6,
+                            stop=[" Human:", " AI:", "\n"]
 
-                            )
-                    else:
-                        with open(filepath + "/convfile.txt") as f:
-                            response = openai.Completion.create(
-                                engine="davinci",
-                                prompt=(f.read()).format(
-                                    "Hey", "Hi there", args),
-                                temperature=0.9,
-                                max_tokens=100,
-                                top_p=1,
-                                frequency_penalty=0,
-                                presence_penalty=0.6,
-                                stop=[" Human:", " AI:", "\n"]
-
-                            )
+                        )
                     bot = response.choices[0].text
-                    lastresp = bot
-                    lastinp = args
                     print(
                         f"\u001b[33;1m{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n\u001b[31m")
                     f = open(f"{filepath}/logs.txt", "a")
@@ -452,38 +430,34 @@ async def trans(ctx):
 async def cf(ctx):
     await ctx.send(random.choice(["Heads", "Tails"]))
 
-"""@client.command()
-async def updates(ctx, remove = False):
-    if remove == False:
-        channel = ctx.message.channel.id
-        f = open(f"{filepath}/config/updaters.txt", "r")
-        servers = list(f.read())
-        f.close()
-        servers.append[channel]
-        f = open(f"{filepath}/config/updaters.txt", "w")
-        f.write(servers)
-        f.close()
-        await ctx.send("Ok, added you to the list of servers to recieve updates")
-    elif remove == "remove":
-        channel = ctx.message.channel.id
-        f = open(f"{filepath}/config/updaters.txt", "r")
-        servers = f.read()
-        f.close()
-        servers.remove[channel]
-        f = open(f"{filepath}/config/updaters.txt", "w")
-        f.write(servers)
-        f.close()
-        await ctx.send("Ok, removed you from the list of servers to recieve updates")
+
+@client.command()
+async def updates(ctx, remove=False):
+    channel = ctx.message.channel.id
+    with open(filepath + "/configs.json", "r") as f:
+        j = json.load(f)
+        channels = j["updates"]
+        if channel in channels:
+            await ctx.send("Ok, removed this channel from the list to recieve updates")
+            channels.remove(channel)
+        else:
+            await ctx.send("Ok, added this channel to the list to recieve updates")
+            channels.append(channel)
+        j["updates"] = channels
+    with open(filepath + "/configs.json", "w") as f:
+        json.dump(j, f)
+
 
 @client.command()
 async def update(ctx, *, args):
     if ctx.message.author.id == 451643725475479552:
-        f = open(f"{filepath}/config/updaters.txt", "r")
-        servers = f.read()
-        f.close()
-        for x in servers:
-            address = client.get_channel(int(x))
-            await address.send(args)"""
+        with open(filepath + "/configs.json", "r") as f:
+            servers = json.load(f)
+            for x in servers["updates"]:
+                address = client.get_channel(int(x))
+                await address.send("**ANNOUNCMENT**")
+                await address.send(args)
+                time.sleep(0.5)
 
 
 @ client.command()
