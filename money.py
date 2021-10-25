@@ -23,6 +23,7 @@ import botlib
 import settings
 import shop
 import sqlbullshit
+import costlib
 
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
@@ -153,13 +154,7 @@ ranks = {
     }
 
 }
-v = 50
-loops = 10000
-upchance = 1
-downchance = 10
-decay = 0.2
-reducedecay = 0.999
-decays = []
+
 
 namestorank = dict()
 
@@ -603,49 +598,16 @@ class money(commands.Cog):
     @tasks.loop(minutes=refresh)
     async def cost(self):
         global cost
-        global countdown
         global refresh
         global cycle
-        global leaderboard
-        global lb
-        global idtoname
-        global prices
-        global upchance, downchance, upordown, v, decay
+        global countdown
         print(f"Refresh: {refresh}")
-        #
-        #
-        #
-        # =========================================================================== #
-        #                            Price maths
-        # =========================================================================== #
-        cycle = cycle + 1
+
         countdown = datetime.now() + timedelta(minutes=refresh)
-        upordown = random.choices(["up", "down"], (upchance, downchance), k=1)
-        if upordown[0] == "up":
-            v += random.uniform(0, 1)
-            upchance -= random.uniform(1, 5)
-            downchance += random.uniform(1, 5)
-            if upchance < 0:
-                upchance = 0
-        else:
-            v -= random.uniform(0, 1)
-            upchance += random.uniform(1, 5)
-            downchance -= random.uniform(1, 5)
-            if downchance < 0:
-                downchance = 0
-        if v > 100:
-            v -= decay
-            if v > 100:
-                decay = decay * 1.25
-            else:
-                decay = decay * reducedecay
-        if decay < 0:
-            decay = 0
-        cost = round(v, 2)
-        prices.append((v, cycle))
-        #
-        #
-        #
+        cycle = cycle + 1
+        cost = costlib.gencost(cost)
+        prices.append((cost, cycle))
+
         print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at ${cost}")

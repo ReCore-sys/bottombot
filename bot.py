@@ -54,9 +54,11 @@ else:
     print("Running windows")
 null = None  # so I can write "null" instead of "None" and look like hackerman
 
+intents = discord.Intents.default()
+intents.members = True
 
 client = discord.Client()
-client = commands.Bot(command_prefix=prefix)
+client = commands.Bot(command_prefix=prefix, intents=intents)
 canwelcome = False
 client.remove_command('help')
 starttime = null
@@ -79,7 +81,7 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    modules = ["money", "cross", "modules", "bounty", "shop"]
+    modules = ["money", "cross", "modules", "bounty", "shop", "admin"]
     for x in modules:
         client.load_extension(x)
 
@@ -327,10 +329,10 @@ async def bb(ctx, *, args):
                 if tokens >= 75:
                     await ctx.send("Sorry, that input was too big. Please try something smaller")
                     return
-                if sql.get(ctx.author.id, "money") < 10:
+                if sql.get(ctx.author.id, "money") < 3:
                     await ctx.send("Sorry, you need more money to use the bot")
                 else:
-                    sql.take(10, ctx.author.id, "money")
+                    sql.take(3, ctx.author.id, "money")
                     ctx.message.channel.typing()
                     with open(filepath + "/convfile.txt") as f:
                         response = openai.Completion.create(
