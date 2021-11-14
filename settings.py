@@ -6,19 +6,48 @@ filepath = os.path.abspath(os.path.dirname(__file__))
 
 
 def check(serverid, action="get", setting=None, val=None):
-    try:
-        f = open(f"{filepath}/serversettings/{serverid}/settings.json", "r")
-        v = json.loads(f.read())
-        f.close()
+    if os.path.isfile(filepath + "/settings/" + str(serverid) + ".json"):
+        with open(filepath + "/settings/" + str(serverid) + ".json", "r") as f:
+            with open(filepath + "/settings/" + str(serverid) + ".json", "w") as r:
+                try:
+                    settings = json.load(f)
+                except json.decoder.JSONDecodeError:
+                    settings = {}
+                if action == "get":
+                    if setting is None:
+                        return settings
+                    elif setting in settings:
+                        return settings[setting]
+                    else:
+                        return True
+                elif action == "set":
+                    if setting is None:
+                        return False
+                    elif val is None:
+                        return False
+                    else:
+                        settings[setting] = val
+                        r.write(json.dumps(settings))
+                        return True
+    else:
         if action == "get":
-            try:
-                return v[setting]
-            except:
-                return None
+            settings = {}
+            settings[setting] = True
+            f = open(filepath + "/settings/" +
+                     str(serverid) + ".json", "w")
+            f.write(json.dumps(settings))
+            f.close()
+            return True
         elif action == "set":
-            v[setting] = val
-        f = open(f"{filepath}/serversettings/{serverid}/settings.json", "w")
-        f.write(json.dumps(v))
-        f.close()
-    except:
-        return True
+            if setting is None:
+                return False
+            elif val is None:
+                return False
+            else:
+                settings = {}
+                settings[setting] = val
+                f = open(filepath + "/settings/" +
+                         str(serverid) + ".json", "w")
+                f.write(json.dumps(settings))
+                f.close()
+                return True

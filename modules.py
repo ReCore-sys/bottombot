@@ -15,7 +15,12 @@ class modules(commands.Cog):
         global valids
         serverid = ctx.message.guild.id
         if (ctx.message.author.guild_permissions.administrator) or (ctx.message.author.id == 451643725475479552):
-            f = open(f"{filepath}/serversettings/{serverid}/settings.json", "r")
+            if os.path.isdir(filepath + "/settings/" + str(serverid)) == False:
+                os.mkdir(filepath + "/settings/" + str(serverid))
+            if os.path.isfile(filepath + "/settings/" + str(serverid) + ".json") == False:
+                with open(filepath + "/settings/" + str(serverid) + ".json", "w") as f:
+                    json.dump({"economy": True}, f)
+            f = open(f"{filepath}/settings/{serverid}.json", "r")
             v = json.loads(f.read())
             f.close()
             if module == None:
@@ -38,7 +43,7 @@ class modules(commands.Cog):
                 await ctx.send(embed=embed)
             elif module != None and type == None:
                 await ctx.send("Please enter on or off")
-            elif module not in v:
+            elif module not in ["economy", "search", "image", "bb", "store", "bounty"]:
                 await ctx.send("That is not a valid module id")
             else:
                 if type == "on":

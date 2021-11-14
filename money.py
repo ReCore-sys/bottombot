@@ -1,37 +1,62 @@
-from ast import Return, alias
+
 import json
 import math
 import operator
 import os
 import random
-from datetime import date, datetime, timedelta
+import re
 import sqlite3
-import secret_data
 import threading
-import requests
-
-import discord
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-import discord.ext
-import humanfriendly
-import matplotlib.pyplot as plt
-from discord.ext import commands, tasks
-from num2words import num2words
+import time
+from datetime import datetime, timedelta
 from io import BytesIO
 
-import botlib
+import discord
+import discord.ext
+import humanfriendly
+import requests
+from discord.ext import commands, tasks
+from num2words import num2words
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+import costlib
+import graph
+import secret_data
 import settings
 import shop
 import sqlbullshit
-import costlib
+import imageyoink
+import botlib
 
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 random.seed(15)
 sql = sqlbullshit.sql("data.db", "user")
 
-font = ImageFont.truetype(f"{filepath}/static/font.ttf", size=35)
+font = ImageFont.truetype(f"{filepath}/static/font.ttf", size=30)
 thiccfont = ImageFont.truetype(f"{filepath}/static/thiccfont.ttf", size=45)
+
+payday = 60*60*48
+
+img = None
+
+
+def notation(inp):
+    """
+    Gets the input and returns {inp} social credits 1% of the time, otherwise ${inp}
+    If the input is a whole number, return an int version of it
+    Examples:
+    2.4: $2.4
+    35.2: 35.2 social credits (1% chance)
+    5: $5
+    """
+    inp = round(inp, 2)
+    if inp % 1 == 0:
+        inp = int(inp)
+    if random.randint(1, 100) == 1:
+        return f"{inp} social credits"
+    else:
+        return f"${inp}"
 
 
 def geticon(ctx):
@@ -50,11 +75,8 @@ def geticon(ctx):
         f.write(imgdata)
 
 
-def stockfind(dbid):  # function to find how many stock a person owns
-    return sql.get(dbid, "stocks")
-
-
 def moneyenabled(id):
+
     if os.path.isfile(
             f"{filepath}/serversettings/{id}/cashenabled.txt") == True:
         return False
@@ -62,40 +84,19 @@ def moneyenabled(id):
         return True
 
 
-def addstock(
-    user, amount
-):  # Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
-    return sql.add(amount, user, "stocks")
-
-
-def balfind(dbid):  # function to find the balance of the id dbid
-    return sql.get(dbid, "money")
-
-
-def rankfind(dbid):  # same as above but for ranks, not bal
-    ranknum = sql.get(dbid, "rank")
-    return ranknum
-
-
 def ranktoid(dbid):
-    userrank = rankfind(dbid)
+    userrank = sql.get(dbid, "rank")
     rankid = ranks[userrank]
     return rankid  # simply gets a user's id and turns it into their rank's id
 
 
 # simple function to check if a user can buy something. Price must be an int.
 def canbuy(price, id):
-    bal = balfind(id)
+    bal = sql.get(id, "money")
     if bal >= price:
         return True
     else:
         return False
-
-
-def addmoney(
-    user, amount
-):  # Slightly less simple function to add money to a user's balance. Use negative numbers to remove money
-    sql.add(amount, user, "money")
 
 
 def doesexist(ctx):
@@ -106,51 +107,75 @@ def doesexist(ctx):
     return True
 
 
+def taxrate(ctx, val):
+
+    dbid = ctx.author.id
+    amount = sql.get(dbid, "loans")
+    if amount == 0:
+        return val
+    elif val < amount:
+        reval = round((val/100) * 30, 2)
+        sql.take(val - reval, dbid, "loans")
+        return val - reval
+    else:
+        sql.set(0, dbid, "loans")
+        return val - amount
+
+
 ranks = {
     1: {
         "price": 0,
         "name": "Bronze",
-        "cap": 1000
+        "cap": 1000,
+        "loancap": 600
     },
     2: {
         "price": 750,
         "name": "Silver",
-        "cap": 7500
+        "cap": 7500,
+        "loancap": 1000
     },
     3: {
         "price": 1500,
         "name": "Gold",
-        "cap": 12000
+        "cap": 12000,
+        "loancap": 4000
     },
     4: {
         "price": 5000,
         "name": "Platinum",
-        "cap": 25000
+        "cap": 25000,
+        "loancap": 8500
     },
     5: {
         "price": 10000,
         "name": "Diamond",
-        "cap": 100000
+        "cap": 100000,
+        "loancap": 17500
     },
     6: {
         "price": 20000,
         "name": "Demigod",
-        "cap": 75000
+        "cap": 75000,
+        "loancap": 40000
     },
     7: {
         "price": 50000,
         "name": "Immortal",
-        "cap": 175000
+        "cap": 175000,
+        "loancap": 90000
     },
     8: {
         "price": 100000,
         "name": "Ascendant",
-        "cap": 200000
+        "cap": 200000,
+        "loancap": 100000
     },
     9: {
         "price": 150000,
         "name": "Tax Man",
-        "cap": 200000
+        "cap": 200000,
+        "loancap": 200000
     }
 
 }
@@ -172,13 +197,14 @@ lb = null
 idtoname = {}
 prices = list()
 
+day = 60*60*24
+
 
 class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cost.start()
-
-    # shows the user's account
+        self.IRS.start()
 
     @commands.check(doesexist)
     @commands.command(aliases=["acc", "balance", "bal", "a"])
@@ -212,9 +238,11 @@ class money(commands.Cog):
                     return
             # Load the path to the user's image, even if it does not exist
             if str(tid) in os.listdir(filepath + "/static/banners"):
-                banner = Image.open(f"{filepath}/static/banners/{tid}")
+                banner = Image.open(
+                    f"{filepath}/static/banners/{tid}").convert("RGBA")
             else:
-                banner = Image.open(f"{filepath}/static/banner.png")
+                banner = Image.open(
+                    f"{filepath}/static/banner.png").convert("RGBA")
             imagepath = f"{filepath}/static/userimgs/{tuser.id}"
 
             # If we don't have the user's image, get it
@@ -230,17 +258,21 @@ class money(commands.Cog):
                 except:
                     print("Users image not found")
                     imagepath = filepath + "/static/unknown.png"
-            # Open our lovely image
-            img = Image.open(imagepath)
-            # Bal, stocks and rank variables to make reading this code easier
+            # Open our lovely image. If it doesn't work, fall back to a dummy image
+            try:
+                img = Image.open(imagepath).convert("RGBA")
+            except:
+                img = Image.open(filepath + "/static/unknown.png", "RGBA")
+            # Bal, stocks, rank and wallet cap variables to make reading this code easier
             bal = round(sql.get(tid, "money"), 2)
-            stocks = stockfind(tid)
-            rank = ranks[rankfind(tid)]["name"]
+            stocks = sql.get(tid, "stocks")
+            rank = ranks[sql.get(tid, "rank")]["name"]
+            cap = ranks[sql.get(tid, "rank")]["cap"]
             # For some reason, each letter is 27 pixels wide with the dummy thicc font
             namelen = 27*len(tname)
             # Resize the pfp to a standard size, so we don't get timmy setting his pfp
             # to a 3.8TB image of heavy from tf2 then crashing this whole thing
-            img = img.resize((178, 178))
+            img = img.resize((180, 180), Image.ANTIALIAS)
             # Give me a red border and everyone else a black one. Cos I wanna be special.
             if tuser.id in secret_data.admins:
                 img = ImageOps.expand(img, border=5, fill='red')
@@ -248,30 +280,44 @@ class money(commands.Cog):
                 img = ImageOps.expand(img, border=5, fill='black')
 
             # Resize the banner to a set size
-            banner = banner.resize((735, 268))
+            banner = banner.resize((745, 270), Image.ANTIALIAS)
+            # Give the banner a nice black border
+            banner = ImageOps.expand(banner, border=5, fill='black')
 
             # Stick the user's icon onto it now
             banner.paste(img, [45, 45])
             # Set up the snake based drawing tablet
             d = ImageDraw.Draw(banner, mode="RGBA")
-            d.rectangle(((240, 25), (600, 243)), fill=(
-                255, 255, 255, 100), outline="black")
+            # Draw a grey rectangle so we can see if people use a custom banner
+            # Create a new plain image
+            rect = Image.new("RGBA", (750, 270))
+            # Set up the snake based drawing tablet for the rectangle
+            rectdraw = ImageDraw.Draw(rect, mode="RGBA")
+            # Draw the fucker
+            rectdraw.rectangle(((270, 22.5), (722.5, 248.5)), fill=(255, 255, 255, 100
+                                                                    ), outline="black")
+            # Paste it onto the banner
+            banner.paste(rect, mask=rect)
             # Write the user's bal on there
-            d.text((250, 75), f"Balance: ${bal}", fill="black", font=font)
+            d.text(
+                (282, 75), f"Balance: {notation(bal)}", fill="black", font=font)
             # MMMMM STONKS
             d.text(
-                (250, 120), f"Owned stocks: {stocks}", fill="black", font=font)
+                (283, 119), f"Owned stocks: {stocks}", fill="black", font=font)
             # Take a guess what this line does
-            d.text((250, 165), f"Rank: {rank}", fill="black", font=font)
+            d.text((282, 163), f"Rank: {rank}", fill="black", font=font)
+            # Add the user's wallet cap
+            d.text(
+                (285, 208), f"Wallet cap: {notation(cap)}", fill="black", font=font)
             # Write the user's name in dummy thicc font
-            d.text((390-namelen/2, 20), tname, fill="black", font=thiccfont)
+            d.text((285, 20), tname, fill="black", font=thiccfont)
             # Underline the user's name with some fucky maths
-            d.line(((390-namelen/2, 70), ((390 + namelen/2), 70)),
+            d.line(((285, 70), ((285 + namelen), 70)),
                    fill=(26, 26, 26), width=5)
             # Waaaa, uploads need to be files whaaaaaa!
             # Suck my fat juicy cock Discord
             with BytesIO() as img_bin:
-                banner.save(img_bin, 'PNG')
+                banner.save(img_bin, 'PNG', optimize=True)
                 img_bin.seek(0)
                 await ctx.send(file=discord.File(fp=img_bin, filename=f'{tname}.png'))
 
@@ -280,21 +326,16 @@ class money(commands.Cog):
 
     @commands.check(doesexist)
     @commands.command()
-    async def pay(self,
-                  ctx,
-                  arg1,
-                  target: discord.Member = null):  # paying someone
+    async def pay(self, ctx,  arg1, target: discord.Member = null):  # paying someone
         if settings.check(ctx.message.guild.id, "get", "economy"):
             # finds the balance of the sender
-            urval = int(balfind(ctx.message.author.id))
+            urval = int(sql.get(ctx.message.author.id), "money")
             # finds the bal of the target
-            thrval = int(balfind(int(target.id)))
+            thrval = int(sql.get(int(target.id)), "money")
             thrid = target.id  # target's ID
-            if target == null:
-                # if that user's balance is null, they don't exist
-                await ctx.send(
-                    "Sorry, that person either does not exist or has not set up their account."
-                )
+            if sql.doesexist(thrid) == False:
+                await ctx.send("That user does not have an account set up")
+
             elif arg1.isnumeric == False:  # if you try paying someone something that isn't a number
                 await ctx.send("You need to give me a number")
             elif thrid == ctx.message.author.id:  # if you try paying yourself
@@ -304,17 +345,17 @@ class money(commands.Cog):
             # if either you have less than $1 or you try and pay more than you have
             elif (int(arg1) >= urval) or (urval - int(arg1) < 0):
                 await ctx.send("Sorry, you don't have enough money")
-            elif balfind(thrid) + int(arg1) > int(ranks[rankfind(thrid)]['cap']):
+            elif sql.get(thrid, "money") + int(arg1) > int(ranks[sql.get(thrid, "rank")]['cap']):
                 await ctx.send("Sorry, that goes over their wallet cap")
             else:  # if you can actually pay them
                 arg1 = int(arg1)
                 sql.take(arg1, ctx.author.id, "money")
                 sql.add(arg1, target.id, "money")
                 # inform the person that they were paid
-                await ctx.send(f"${arg1} was transferred to <@!{target.id}>")
+                await ctx.send(f"{notation(arg1)} was transferred to <@!{target.id}>")
                 # send dm to target. Still not working
                 await target.send(
-                    f"{ctx.message.author} just payed you ${arg1}!\n({ctx.guild.name})"
+                    f"{ctx.message.author} just payed you {notation(arg1)}!\n({ctx.guild.name})"
                 )
         else:
             await ctx.send("Sorry, economy has been turned off for this server"
@@ -327,7 +368,7 @@ class money(commands.Cog):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
                 sql.add(float(arg1), target.id, "money")
-                await ctx.send(f"${arg1} added")
+                await ctx.send(f"\{notation(float(arg1))} added")
             else:
                 await ctx.send("Nope")
         else:
@@ -341,7 +382,7 @@ class money(commands.Cog):
             if ctx.message.author.id == 451643725475479552:
                 arg1 = float(arg1)
                 sql.set(arg1, target.id, "money")
-                await ctx.send(f"Balance set to ${arg1} for {target}")
+                await ctx.send(f"Balance set to {notation(arg1)} for {target}")
             else:
                 await ctx.send("Nope")
         else:
@@ -354,7 +395,7 @@ class money(commands.Cog):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
                 arg1 = float(arg1)
-                sql.set(arg1, target.id, "stock")
+                sql.set(arg1, target.id, "stocks")
                 await ctx.send(f"Stocks set to {arg1} for {target}")
             else:
                 await ctx.send("Nope")
@@ -366,11 +407,12 @@ class money(commands.Cog):
     @commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
     async def daily(self, ctx):
         if settings.check(ctx.message.guild.id, "get", "economy"):
-            if balfind != null:
+            if sql.get(ctx.author.id, "money") != null:
                 r = random.randint(20, 50)
-                if balfind(ctx.message.author.id) + r <= ranks[rankfind(ctx.author.id)]['cap']:
-                    addmoney(ctx.message.author.id, r)
-                    await ctx.send(f"${r} was added to your account")
+                if sql.get(ctx.message.author.id) + r <= ranks[sql.get(ctx.author.id, "money", "rank")]['cap']:
+                    amnt = taxrate(ctx, r)
+                    sql.add(ctx.message.author.id, amnt, "money")
+                    await ctx.send(f"{notation(amnt)} was added to your account")
                 else:
                     await ctx.send("Sorry, that goes over your wallet cap")
             else:
@@ -394,29 +436,34 @@ class money(commands.Cog):
             global cost
             global countdown
             user = int(ctx.message.author.id)
-            if stockfind(user) == null:
+            if sql.get(user, "stocks") == null:
                 await ctx.send(
                     "You need to create an account with -account first")
             else:
                 if action == "sell":
                     if count == "all":
                         # work out how many the can buy with their currant bal and then set that to the number they are trying to buy
-                        count = stockfind(user)
+                        count = int(sql.get(user, "stocks"))
+                        if count <= 0:
+                            await ctx.send("Sorry, you don't own any stocks")
                 elif action == "buy":
                     if count == "all":
-                        bal = balfind(user)
+                        bal = sql.get(user, "money")
                         # if "all" is used, work out how many they can sell buy just setting number to sell as how many stocks they own
                         count = math.floor(bal / cost)
+                        if count <= 0:
+                            await ctx.send("Sorry, you can't afford any stocks")
+                            return
 
-                stockcount = stockfind(user)
-                bal = balfind(ctx.message.author.id)
+                stockcount = sql.get(user, "stocks")
+                bal = sql.get(ctx.message.author.id, "money")
                 try:
                     timeto = countdown - datetime.now()
                 except:
                     pass
                 if action == null:
                     await ctx.send(
-                        f"Current price of stocks: **${cost}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}"
+                        f"Current price of stocks: **{notation(cost)}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}{botlib.stockcomment(ctx, cost)}"
                     )  # if no options are specified, show current price and hw many the user owns.
                 else:
                     count = int(count)
@@ -431,26 +478,33 @@ class money(commands.Cog):
                         # if they try sell more stocks than they own.
                         await ctx.send("You don't own that many stocks")
                     elif action == "buy":
-                        addmoney(user, (0 - fcost))
-                        addstock(user, count)
+                        sql.take(taxrate(ctx, fcost), user, "money")
+                        sql.add(count, user, "stocks")
                         # if they can actually buy stocks, run this to do all the account manipulaion.
-                        await ctx.send(f"{count} stocks bought for ${fcost}")
+                        await ctx.send(f"{count} stocks bought for {notation(fcost)}")
                     elif action == "sell":
                         # Makes sure that the sold stocks won't exceed the wallet cap of their rank.
-                        if balfind(ctx.message.author.id) + fcost <= ranks[rankfind(user)]['cap']:
-                            addmoney(user, fcost)
-                            addstock(user, (0 - count))
-                            await ctx.send(f"{count} stocks sold for ${fcost}")
+                        if sql.get(ctx.message.author.id, "money") + fcost <= ranks[sql.get(user, "rank")]['cap']:
+                            sql.add(taxrate(ctx, fcost), user, "money")
+                            sql.take(count, user, "stocks")
+                            await ctx.send(f"{count} stocks sold for {notation(fcost)}")
                         else:
                             await ctx.send(
                                 "Sorry, that goes over your wallet cap")
                     elif action == "calc":
                         await ctx.send(
                             # simply calculates how much the specified stocks would cost.
-                            f"{count} stocks at ${cost} is worth ${round((count * cost), 2)}"
+                            f"{count} stocks at {notation(cost)} is worth ${round((count * cost), 2)}"
                         )
         else:
             await ctx.send("Sorry, economy is disabled on this server")
+
+    @commands.command()
+    async def stockset(self, ctx, arg):
+        if ctx.message.author.id == 451643725475479552:
+            global cost
+            cost = float(arg)
+            await ctx.send(f"Stock price set to {arg}")
 
     @commands.check(doesexist)
     @commands.command(aliases=["ranks"])
@@ -480,7 +534,7 @@ class money(commands.Cog):
                     text='Use "-rank buy [rank name]" to buy a rank')
                 await ctx.send(embed=embed)
             else:  # if they do have it, start doing stuff
-                crank = rankfind(int(user))
+                crank = sql.get(int(user), "rank")
                 crankv = ranks[crank]["price"]
                 val = ranks[namestorank[rank]]["price"]
                 if rank == null:
@@ -501,9 +555,9 @@ class money(commands.Cog):
                     rnum = namestorank[rank]
                     sql.set(rnum, user, "rank")
                     # takes the money from the account (adds a negative value)
-                    addmoney(user, cost)
+                    sql.add(user, cost, "money")
                     # let them know
-                    await ctx.send(f"Rank {rank} was bought for ${val}")
+                    await ctx.send(f"Rank {rank} was bought for {notation(val)}")
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
@@ -527,7 +581,7 @@ class money(commands.Cog):
         resp = cur.fetchall()
         for id, money, stocks in resp:
             totalval = (money) + (int(stocks) * cost)
-            totalval = totalval + ranks[rankfind(id)]["price"]
+            totalval = totalval + ranks[sql.get(id, "rank")]["price"]
             totalval = round(totalval, 2)
             leaderboard.append((id, totalval))
 
@@ -583,16 +637,13 @@ class money(commands.Cog):
     @commands.command(aliases=["price", "p"])
     async def prices(self, ctx):
         global prices
-        costs = [x[0] for x in prices][-288:]
-        cycles = [x[1]/6 for x in prices][-288:]
-        plt.plot(cycles, costs)
-        plt.xlabel('Hours since last restart')
-        plt.ylabel('Price')
+        global img
+        if img == None:
+            img = graph.create(prices[-288:])
         with BytesIO() as img_bin:
-            plt.savefig(img_bin, format='png')
+            img.save(img_bin, format='PNG')
             img_bin.seek(0)
-            await ctx.send(file=discord.File(fp=img_bin, filename=f'{ctx.author.name}.png'))
-
+            await ctx.send(file=discord.File(fp=img_bin, filename=f'{prices[-1][0]}.png'))
     v = 50
 
     @tasks.loop(minutes=refresh)
@@ -601,39 +652,41 @@ class money(commands.Cog):
         global refresh
         global cycle
         global countdown
+        global img
         print(f"Refresh: {refresh}")
 
         countdown = datetime.now() + timedelta(minutes=refresh)
         cycle = cycle + 1
         cost = costlib.gencost(cost)
-        prices.append((cost, cycle))
+        prices.append((cycle, cost))
+        img = None
+        while len(prices) > (60*24*2)/refresh:
+            prices.pop(0)
 
-        print(f"\u001b[32mstock price is ${cost}\nCycle is {cycle}\u001b[31m")
+        print(
+            f"stock price is {notation(cost)}\nCycle is {cycle}")
         await self.bot.change_presence(activity=discord.Activity(
-            type=discord.ActivityType.watching, name=f"Stock price at ${cost}")
+            type=discord.ActivityType.watching, name=f"Stock price at {notation(cost)}")
         )
         for x in sql.getall("id", mode="field"):
             user = await self.bot.fetch_user(x[0])
             idtoname[x[0]] = user.name
 
-    def is_url_image(self, image_url):
-        image_formats = ("image/png", "image/jpeg", "image/jpg")
-        r = requests.head(image_url)
-        if r.headers["content-type"] in image_formats:
-            return True
-        return False
-
     @commands.command()
-    async def banner(self, ctx, *, args):
+    async def banner(self, ctx, *, args: str = None):
+        if args is None:
+            await ctx.send("Please enter a url")
+            return
         bal = sql.get(ctx.author.id, "money")
         if bal >= 1000:
-            if self.is_url_image(args):
-                size = requests.get(
-                    args, stream=True).headers['Content-length']
+            url = imageyoink.sorter(args)
+            if url != False:
+                size = int(requests.get(
+                    url, stream=True).headers['Content-length'])
                 if size > 50000000:
                     await ctx.send("That image is too big")
                     return
-                data = requests.get(args).content
+                data = requests.get(url).content
                 f = open(filepath + "/static/banners/" +
                          str(ctx.author.id), "wb")
                 f.write(data)
@@ -641,9 +694,188 @@ class money(commands.Cog):
                 await ctx.send("Banner image was updated!")
                 sql.take(1000, ctx.author.id, "money")
             else:
-                print("Not an image")
+                await ctx.send("That is not a valid image")
         else:
             await ctx.send("Not enough money")
+
+    @commands.command(aliases=["loans", "carwarranty"])
+    async def loan(self, ctx, inp1=None, inp2=None, inp3=None):
+        loanrate = 15
+        bal = sql.get(ctx.author.id, "money")
+        owed = sql.get(ctx.author.id, "loans")
+        cs = sql.get(ctx.author.id, "creditscore")
+        loancap = ranks[sql.get(ctx.author.id, "rank")]["loancap"]
+
+        reg = re.compile(r"\d+\.?\d*")
+
+        with open(f"{filepath}/json/taxes.json", "r") as r:
+            r = json.load(r)
+            if str(ctx.author.id) in r:
+                unpaid = r[str(ctx.author.id)]["amount"]
+            else:
+                unpaid = 0
+            totalowed = unpaid + owed
+            match inp1:
+                case "take":
+                    if inp2 == None:
+                        await ctx.send("Please give an amount")
+                        return
+                    isnum = False if reg.search(inp2) == None else True
+                    if isnum:
+                        inp2 = reg.search(inp2).group(0)
+                        val = float(inp2)
+                        if val > loancap:
+                            await ctx.send(f"Sorry, that goes over your loan cap ({notation(loancap)})")
+                            return
+
+                        if owed > 200:
+                            await ctx.send("Sorry, you already owe a fair bit of money. Pay some off then try later.")
+                        elif cs <= -25:
+                            await ctx.send("Sorry, your credit score is too low.")
+                        else:
+                            if val < 1:
+                                await ctx.send("You can't take out that amount")
+                                return
+                            tax = ((val/100)*loanrate)
+                            if str(ctx.author.id) in r:
+                                loancost = owed + val + tax
+                                r[str(ctx.author.id)
+                                  ]["amount"] = unpaid + loancost
+                                sql.add(val, ctx.author.id, "money")
+                                await ctx.send(f"You took out a loan of {notation(val)}. You have 2 days to pay it off, plus a {loanrate}% fee.")
+                            else:
+                                loancost = val + tax
+                                r[str(ctx.author.id)] = {"amount": val + tax,
+                                                         "time": time.time()}
+                                sql.add(val, ctx.author.id, "money")
+                                await ctx.send(f"You took out a loan of {notation(val)}. You have 2 days to pay it off, plus a {loanrate}% fee.")
+                    else:
+                        await ctx.send("That was not a valid input")
+                case "pay":
+                    if inp2 == None:
+                        await ctx.send("Please give an amount")
+                        return
+                    if (str(ctx.author.id) not in r) and (sql.get(ctx.author.id, "loans") <= 0):
+                        await ctx.send("You don't have any loans dumbass")
+                        return
+                    if inp2 == None:
+                        if (bal < unpaid and bal < owed):
+                            await ctx.send(f"Sorry, you don't have enough to pay off the loan. You need another {notation(owed - bal)}")
+                        else:
+                            if bal >= unpaid and unpaid != 0:
+                                r.pop(str(ctx.author.id))
+                                sql.take(unpaid, ctx.author.id, "money")
+                                await ctx.send("You just paid off your loan! Well done!")
+                            elif bal >= owed:
+                                sql.set(0, ctx.author.id, "loans")
+                                sql.take(owed, ctx.author.id, "money")
+                                await ctx.send("You just paid off your debt! Well done!")
+                    else:
+                        isnum = False if reg.search(inp2) == None else True
+                        if isnum == False:
+                            await ctx.send("That was not a valid input")
+                        else:
+                            inp2 = reg.search(inp2).group(0)
+                            amount = float(inp2)
+                            if amount < 1:
+                                await ctx.send(f"Sorry, you can't pay less than {notation(1)}")
+
+                            else:
+                                if unpaid > 0:
+                                    if amount < unpaid:
+                                        r[str(ctx.author.id)
+                                          ]["amount"] = unpaid - amount
+                                        sql.take(
+                                            amount, ctx.author.id, "money")
+                                        await ctx.send(f"Well done, you just paid off {notation(amount)} of your loan!")
+                                    else:
+                                        r.pop(str(ctx.author.id))
+                                        sql.take(
+                                            unpaid, ctx.author.id, "money")
+                                        await ctx.send("You just paid off your loan! Well done!")
+                                else:
+                                    if amount < owed:
+                                        sql.take(
+                                            amount, ctx.author.id, "loans")
+                                        sql.take(
+                                            amount, ctx.author.id, "money")
+                                        await ctx.send(f"Well done, you just paid off {notation(amount)} of your debt!")
+                                    else:
+                                        sql.set(0, ctx.author.id, "loans")
+                                        sql.take(owed, ctx.author.id, "money")
+                                        await ctx.send(f"Well done, you just paid off of your debt!")
+
+                case _:
+                    # Send the user a nice embed to show them their current loans
+                    if str(ctx.author.id) not in r and owed == 0:
+                        await ctx.send(f"You don't have any loans")
+                    else:
+
+                        if unpaid > 0:
+                            timeremaining = time.strftime(
+                                "%H:%M:%S", time.gmtime(r[str(ctx.author.id)]["time"] - time.time()))
+                            embed = discord.Embed(
+                                title=f"{ctx.author.name}'s Loans",
+                                description=f"You have a loan of {notation(unpaid)} due in {timeremaining}",
+                                color=discord.Color.blue(),
+                            )
+                            if owed > 0:
+                                embed.add_field(
+                                    name="You also owe", value=f"{notation(owed)}")
+                        else:
+                            embed = discord.Embed(
+                                title=f"{ctx.author.name}'s debt",
+                                description=f"You have a debt of {notation(owed)}.",
+                                color=discord.Color.blue(),
+                            )
+                        embed.add_field(name="Credit score",
+                                        value=cs)
+                        embed.set_footer(
+                            text=f"You have {notation(round(bal, 2))}")
+                        await ctx.send(embed=embed)
+
+            with open(f"{filepath}/json/taxes.json", "w") as j:
+                json.dump(r, j)
+
+    @tasks.loop(seconds=day)
+    async def IRS(self):
+        with open(filepath + "/json/taxes.json") as f:
+            if os.path.getsize(f"{filepath}/json/taxes.json") == 0:
+                with open(filepath + "/taxes.json", "w") as fw:
+                    ob = {"0": -1}
+                    json.dump(ob, fw)
+            f = json.load(f)
+            f = dict(f)
+            droppers = []
+            for x in f:
+                if x != "0":
+                    amount = f[x]["amount"]
+                    t = f[x]["time"]
+                    if t < time.time() + payday:
+                        sqlt = sqlbullshit.sql("data.db", "user")
+                        try:
+                            sqlt.add(amount, int(x), "loans")
+                            droppers.append(x)
+                            user = self.bot.get_user(
+                                int(x))
+                            name = await self.bot.fetch_user(int(x))
+                            name = name.display_name
+                            if random.randint(0, 100) == 1:
+                                msg = f"Hello {name}, we have been trying to reach you about your car's extended warrenty. Please check in with us by running -carwarranty"
+                            else:
+                                msg = f"""So, {name}, I hear you haven't paid back your loan of {notation(amount)}. Good for you, I'm in a nice mood.
+                                            \nI'm going to start just taking your money, kapish? It's that or your kneecaps.
+                                            \nDon't make me send Vinny around again. I hope you remember what happened to your kids last time."""
+                            await user.send(msg)
+                        except sqlbullshit.SQLerror:
+                            user = self.bot.get_user(
+                                int(451643725475479552))
+                            await user.send(f"A user with the id {x} has caused problems by not existing. pls fix")
+            for x in droppers:
+                f.pop(x)
+            droppers = list()
+            with open(filepath + "/taxes.json", "w") as fw:
+                json.dump(f, fw)
 
 
 def setup(bot: commands.Bot):

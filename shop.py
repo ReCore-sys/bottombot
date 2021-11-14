@@ -1,29 +1,20 @@
 import os
-import asyncio
-import math
 import random
-import time
-import async_cse
 import discord
-import botlib
 import money
-import settings
 import crafts
 import json
-from async_timeout import timeout
-from discord.ext import commands, tasks
-from tinydb import TinyDB, Query
-from datetime import datetime, date, timedelta
-from num2words import num2words
-import operator
-from itertools import islice
+from discord.ext import commands
+from datetime import datetime, timedelta
 from collections import OrderedDict
-from operator import getitem
-from disputils import BotEmbedPaginator, BotConfirmation, BotMultipleChoice
-import copy
+from disputils import BotEmbedPaginator
+
+import sqlbullshit
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
 # region Base items
+
+sql = sqlbullshit.sql(f"{filepath}/data.db", "users")
 
 
 wares = {
@@ -133,7 +124,7 @@ class shop(commands.Cog):
                     elif str(itemcount).isnumeric() == False:
                         await ctx.send("Please enter a number")
                     else:
-                        if money.balfind(ctx.message.author.id) < wares[item] * itemcount:
+                        if sql.get(ctx.message.author.id, "money") < wares[item] * itemcount:
                             await ctx.send("Sorry you can't afford that")
                         else:
                             # what to actually run if they can buy the item
@@ -246,7 +237,7 @@ class shop(commands.Cog):
             if action1 == "buy":
                 if str(action2).isnumeric() == False:
                     await ctx.send("Please enter a numeric ID")
-                elif int((int(sorted1[str(action2)]["price"]) * action3)) > int(money.balfind(ctx.message.author.id)):
+                elif int((int(sorted1[str(action2)]["price"]) * action3)) > int(money.sql.get(ctx.message.author.id), "money"):
                     await ctx.send("Sorry, you can't afford that")
                 else:
                     try:
