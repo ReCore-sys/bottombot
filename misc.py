@@ -1,24 +1,31 @@
-import discord
-from discord.ext import commands
 import datetime
 import json
 import os
+import platform
 import random
 import time
 
+import cpuinfo
+import discord
+import humanfriendly
+import openai
+import psutil
+import requests
+from discord.ext import commands
+
 import botlib
 import bottomlib
-import discord
-import requests
-import settings
-from discord.ext import commands
-import openai
 import secret_data
+import settings
 import sqlbullshit
+import utils
+
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 sql = sqlbullshit.sql(filepath + "/data.db", "user")
 openai.api_key = secret_data.openaikey
+
+starttime = time.time()
 
 
 class Misc(commands.Cog):
@@ -226,7 +233,7 @@ class Misc(commands.Cog):
     @commands.command()
     async def updates(self, ctx, remove=False):
         channel = ctx.message.channel.id
-        with open(filepath + "/configs.json", "r") as f:
+        with open(filepath + "/json/configs.json", "r") as f:
             j = json.load(f)
             channels = j["updates"]
             if channel in channels:
@@ -236,13 +243,13 @@ class Misc(commands.Cog):
                 await ctx.send("Ok, added this channel to the list to recieve updates")
                 channels.append(channel)
             j["updates"] = channels
-        with open(filepath + "/configs.json", "w") as f:
+        with open(filepath + "/json/configs.json", "w") as f:
             json.dump(j, f)
 
     @commands.command()
     async def update(self, ctx, *, args):
         if ctx.message.author.id == 451643725475479552:
-            with open(filepath + "/configs.json", "r") as f:
+            with open(filepath + "/json/configs.json", "r") as f:
                 servers = json.load(f)
                 for x in servers["updates"]:
                     address = commands.get_channel(int(x))
@@ -288,6 +295,40 @@ class Misc(commands.Cog):
             embed = discord.Embed(
                 title=menu, description=result2[menu], color=0x1e00ff)
             await ctx.send(embed=embed)
+
+    @commands.command()
+    async def stats(self, ctx):
+        uname = platform.uname()
+        cputype = cpuinfo.get_cpu_info()['brand_raw']
+        osversion = uname.version
+        ostype = uname.system
+        uptime = time.time() - starttime
+        cores = psutil.cpu_count(logical=True)
+        cpuuse = psutil.cpu_percent()
+        svmem = psutil.virtual_memory()
+        mem = utils.convert_bytes(svmem.total)
+        used = utils.convert_bytes(svmem.used)
+        percent = svmem.percent
+        partition = psutil.disk_partitions()[0]
+        partition_usage = psutil.disk_usage(partition.mountpoint)
+        disk_total = utils.convert_bytes(partition_usage.total)
+        disk_used = utils.convert_bytes(partition_usage.used)
+        disk_percent = partition_usage.percent
+        embed = discord.Embed(
+            title="Stats", description="System stats", color=0x1e00ff)
+        embed.add_field(
+            name="Uptime", value=f"{humanfriendly.format_timespan(uptime)}", inline=False)
+        embed.add_field(name="CPU", value=f"{cputype}", inline=False)
+        embed.add_field(name="CPU Usage", value=f"{cpuuse}%", inline=False)
+        embed.add_field(
+            name="OS", value=f"{ostype} ({osversion})", inline=False)
+        embed.add_field(name="Memory", value=f"{mem}", inline=False)
+        embed.add_field(
+            name="Used", value=f"{used} ({percent}%)", inline=False)
+        embed.add_field(name="Disk Total", value=f"{disk_total}", inline=False)
+        embed.add_field(name="Disk Used",
+                        value=f"{disk_used} ({disk_percent}%)", inline=False)
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

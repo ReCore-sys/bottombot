@@ -23,7 +23,7 @@ class SQLerror(Exception):
 
 
 class sql:
-    def __init__(self, db=None, table=None):
+    def __init__(self, db: str = None, table: str = None):
         """A basic sql handler
         ----------
         ----------
@@ -36,6 +36,10 @@ class sql:
         table : str, optional
             name of the table to manipulate, by default None
         """
+        if db == None:
+            raise SQLerror("No database specified")
+        if table == None:
+            raise SQLerror("No table specified")
         self.db = sqlite3.connect(db)
         self.cursor = self.db.cursor()
         self.table = table
@@ -45,7 +49,7 @@ class sql:
             "FLOAT": "REAL"
         }
     try:
-        def doesexist(self, usr):
+        def doesexist(self, usr: int) -> bool:
             """doesexist Checks if a user exists in the db
 
             Parameters
@@ -65,7 +69,7 @@ class sql:
             else:
                 return True
 
-        def set(self, amount, usr, field):
+        def set(self, amount: int, usr: int, field: str):
             """set
             \nSets the value of a field
 
@@ -85,7 +89,7 @@ class sql:
             else:
                 raise SQLerror(f"User {usr} does not exist")
 
-        def add(self, amount, usr, field):
+        def add(self, amount: int, usr: int, field: str):
             """add
             \nAdds a value to a field
 
@@ -105,8 +109,8 @@ class sql:
             else:
                 raise SQLerror(f"User {usr} does not exist")
 
-        def take(self, amount, usr, field):
-            """takebal
+        def take(self, amount: int, usr: int, field: str):
+            """take
             \nTakes a value from a field
             Parameters
             ----------
@@ -124,7 +128,7 @@ class sql:
             else:
                 raise SQLerror(f"User {usr} does not exist")
 
-        def adduser(self, usr):
+        def adduser(self, usr: int):
             """adduser
             \nAdds a user to the DB
 
@@ -140,8 +144,9 @@ class sql:
             else:
                 raise SQLerror(f"User {usr} already exists")
 
-        def removeuser(self, usr):
-            """removeuser Removes a user from the db
+        def removeuser(self, usr: int):
+            """removeuser\n
+            Removes a user from the db
 
             Parameters
             ----------
@@ -155,8 +160,9 @@ class sql:
             else:
                 raise SQLerror(f"User {usr} does not exist")
 
-        def collums(self):
-            """collums Gets a list of all available fields in the database
+        def collums(self) -> list:
+            """collums\n
+            Gets a list of all available fields in the database
 
             Returns
             -------
@@ -167,8 +173,9 @@ class sql:
             res = self.cursor.fetchall()
             return [x[1] for x in res]
 
-        def addcollum(self, field, datatype):
-            """addcollum Adds a collum to the database
+        def addcollum(self, field: str, datatype: str):
+            """addcollum\n
+            Adds a collum to the database
 
             Parameters
             ----------
@@ -191,7 +198,7 @@ class sql:
             else:
                 raise SQLerror("Invalid data type")
 
-        def get(self, usr, field):
+        def get(self, usr: int, field: str) -> int | str:
             """get
             \nGets a specific value from the database
             \nUse collums() to list all available fields
@@ -216,7 +223,7 @@ class sql:
             else:
                 return None
 
-        def getall(self, inp, **mode):
+        def getall(self, inp: int | str, **mode: str) -> list:
             """getall
             \nGets all results
 
@@ -226,8 +233,8 @@ class sql:
                 The field or ID to get results for
 
             mode : kwarg
-                Can take multiple values. If `mode` is id, it will return all collums for that id ||
-                If field, will return all items in that collum ||
+                Can take multiple values. If `mode` is "id", it will return all collums for that id\n
+                If "field", will return all items in that collum\n
                 If condition is specified, will add a `where` condition to the end of the query
 
             Returns
@@ -277,6 +284,6 @@ class sql:
 
     except KeyboardInterrupt:
         # If a keyboard interupt is called, close the db
-        def c(self):
+        def closedb(self):
             self.db.close()
-        c()
+        closedb()

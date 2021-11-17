@@ -1,4 +1,3 @@
-
 import json
 import math
 import operator
@@ -30,7 +29,7 @@ import botlib
 
 null = None
 filepath = os.path.abspath(os.path.dirname(__file__))
-random.seed(15)
+random.seed(os.urandom(32))
 sql = sqlbullshit.sql("data.db", "user")
 
 font = ImageFont.truetype(f"{filepath}/static/font.ttf", size=30)
@@ -186,16 +185,18 @@ namestorank = dict()
 for x in ranks:
     f = ranks[x]["name"]
     namestorank[(f.lower()).replace(" ", "")] = x
-
-cost = 50
+with open(f"{filepath}/json/prices.json", "r") as f:
+    j = json.load(f)
+    cost = j[-1][1]
+    cycle = j[-1][0]
 countdown = null
 refresh = 10
-cycle = 0
 precost = 50
 leaderboard = []
 lb = null
 idtoname = {}
-prices = list()
+with open(f"{filepath}/json/prices.json") as f:
+    prices = json.load(f)
 
 day = 60*60*24
 
@@ -407,11 +408,11 @@ class money(commands.Cog):
     @commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
     async def daily(self, ctx):
         if settings.check(ctx.message.guild.id, "get", "economy"):
-            if sql.get(ctx.author.id, "money") != null:
+            if sql.doesexist(int(ctx.message.author.id)):
                 r = random.randint(20, 50)
-                if sql.get(ctx.message.author.id) + r <= ranks[sql.get(ctx.author.id, "money", "rank")]['cap']:
+                if sql.get(ctx.message.author.id, "money") + r <= ranks[sql.get(ctx.author.id, "rank")]['cap']:
                     amnt = taxrate(ctx, r)
-                    sql.add(ctx.message.author.id, amnt, "money")
+                    sql.add(amnt, ctx.message.author.id, "money")
                     await ctx.send(f"{notation(amnt)} was added to your account")
                 else:
                     await ctx.send("Sorry, that goes over your wallet cap")
@@ -427,6 +428,8 @@ class money(commands.Cog):
             await ctx.reply(
                 f"You can only do daily once a day. Try again in {humanfriendly.format_timespan(error.retry_after)}"
             )
+        else:
+            raise error
 
     @commands.check(doesexist)
     @commands.command(aliases=["stock", "stonk", "stonks"])
@@ -662,15 +665,18 @@ class money(commands.Cog):
         img = None
         while len(prices) > (60*24*2)/refresh:
             prices.pop(0)
+        with open(f"{filepath}/json/prices.json", "w") as f:
+            json.dump(prices, f)
 
         print(
             f"stock price is {notation(cost)}\nCycle is {cycle}")
         await self.bot.change_presence(activity=discord.Activity(
             type=discord.ActivityType.watching, name=f"Stock price at {notation(cost)}")
         )
-        for x in sql.getall("id", mode="field"):
-            user = await self.bot.fetch_user(x[0])
-            idtoname[x[0]] = user.name
+        if cycle > 1:
+            for x in sql.getall("id", mode="field"):
+                user = await self.bot.fetch_user(x[0])
+                idtoname[x[0]] = user.name
 
     @commands.command()
     async def banner(self, ctx, *, args: str = None):

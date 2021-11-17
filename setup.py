@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 import zipfile
-import sqlite3
+import pexpect
 import subprocess
 from threading import Thread
 from datetime import datetime
@@ -11,13 +11,22 @@ filepath = os.path.abspath(os.path.dirname(__file__))
 
 day = 60*60*24
 
+std = ""
+
 
 def wavelink_start():
+    global std
     # Start the wavelink msuic thing
     print("\nInitiating wavelink")
     # Start the .jar via subprocess and then pipe the output into the void cos no one gives a shit about it
-    subprocess.run(["java", "-jar", f"{filepath}/Lavalink.jar"],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    child = pexpect.spawn(
+        f"java -jar {filepath}/Lavalink.jar")
+
+    child.expect(
+        '.*All illegal access operations will be denied in a future release.*')
+    print("Lavalink started")
+    time.sleep(2)
+    return
 
 
 def backup():
@@ -53,8 +62,8 @@ def backup():
 
 
 def begin():
-    threads = [Thread(target=backup, name="Database backup"),
-               Thread(target=wavelink_start, name="Wavelink")]
+    threads = [Thread(target=backup, name="Database backup")
+               ]
 
     for x in threads:
         x.start()

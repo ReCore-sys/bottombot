@@ -1,4 +1,5 @@
 import os
+import threading
 import sqlbullshit
 import secret_data
 import discord
@@ -10,7 +11,6 @@ import setup
 import time
 import datetime
 import json
-
 
 print("\u001b[32;1m")
 print(
@@ -71,8 +71,8 @@ async def on_ready():
     for x in modules:
         client.load_extension(x)
     # We sleep here so wavelink has time to get set up
-    time.sleep(3)
-    client.load_extension("music")
+    #p = setup.wavelink_start()
+    # client.load_extension("music")
 
 
 @client.event
@@ -92,7 +92,7 @@ async def on_guild_join(guild):
         f = open(f"{filepath}/json/servers.json", "r")
         data = json.load(f)
         f.close()
-    except:
+    except FileNotFoundError:
         f = open(f"{filepath}/json/servers.json", "w")
         data = {}
         f.close()
@@ -129,7 +129,7 @@ async def init(ctx):
         f = open(f"{filepath}/json/servers.json", "r")
         data = json.load(f)
         f.close()
-    except:
+    except FileNotFoundError:
         f = open(f"{filepath}/json/servers.json", "w")
         data = {}
         f.close()
@@ -155,23 +155,20 @@ async def on_member_join(member):
 @client.event
 async def on_message(message):
     if '<@' in message.content:
-        try:
-            if str(message.guild.id) not in os.listdir(f"{filepath}/serversettings"):
-                os.system(f'mkdir serversettings/{message.guild.id}')
-                # this makes the relevant folders for any servers that don't already have a serversettings entry.
-            if "replay.txt" not in os.listdir(f"serversettings/{message.guild.id}"):
-                os.system(
-                    f"touch serversettings/{message.guild.id}/replay.txt")
-            if message.author != client.user:
-                pingC = (message.content).encode("utf-8", "ignore")
-                pingC = pingC.decode("utf-8", "ignore")
-                pingU = message.author
-                f = open(
-                    f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
-                f.write(f"\n'{pingC}' was sent by {pingU}")
-                f.close()
-        except:
-            pass
+        if str(message.guild.id) not in os.listdir(f"{filepath}/serversettings"):
+            os.system(f'mkdir serversettings/{message.guild.id}')
+            # this makes the relevant folders for any servers that don't already have a serversettings entry.
+        if "replay.txt" not in os.listdir(f"serversettings/{message.guild.id}"):
+            os.system(
+                f"touch serversettings/{message.guild.id}/replay.txt")
+        if message.author != client.user:
+            pingC = (message.content).encode("utf-8", "ignore")
+            pingC = pingC.decode("utf-8", "ignore")
+            pingU = message.author
+            f = open(
+                f"{filepath}/serversettings/{message.guild.id}/replay.txt", "a")
+            f.write(f"\n'{pingC}' was sent by {pingU}")
+            f.close()
     elif message.content == "hello there":
         await message.channel.send("General Kenobi")
     r = random.randint(0, 14)
@@ -179,9 +176,11 @@ async def on_message(message):
     if (r == 9) and (message.author.id != 758912539836547132):
         if sql.get(u, "money") != null:
             sql.add(random.randint(1, 5), u, "money")
-            print(f"$1 was added to {message.author}")
+            print(
+                f"$1 was added to {message.author} in server {message.guild.name}")
     # this breaks everything if removed. I don't advise it.
     await client.process_commands(message)
 
 
-client.run(token)
+if __name__ == '__main__':
+    client.run(token)
