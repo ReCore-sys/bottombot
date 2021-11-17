@@ -395,7 +395,7 @@ class money(commands.Cog):
     async def setstock(self, ctx, arg1, target: discord.Member):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if ctx.message.author.id == 451643725475479552:
-                arg1 = float(arg1)
+                arg1 = int(arg1)
                 sql.set(arg1, target.id, "stocks")
                 await ctx.send(f"Stocks set to {arg1} for {target}")
             else:
@@ -492,8 +492,15 @@ class money(commands.Cog):
                             sql.take(count, user, "stocks")
                             await ctx.send(f"{count} stocks sold for {notation(fcost)}")
                         else:
-                            await ctx.send(
-                                "Sorry, that goes over your wallet cap")
+                            c = 1
+                            while cost*c + bal < ranks[sql.get(ctx.author.id, "rank")]['cap']:
+                                c += 1
+                            count = c - 1
+                            fcost = cost*count
+
+                            sql.add(taxrate(ctx, fcost), user, "money")
+                            sql.take(count, user, "stocks")
+                            await ctx.send(f"Since that amount of sold stocks would go over your wallet cap, you are only selling {count} stocks for {notation(fcost)}")
                     elif action == "calc":
                         await ctx.send(
                             # simply calculates how much the specified stocks would cost.

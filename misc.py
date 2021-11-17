@@ -9,7 +9,11 @@ import cpuinfo
 import discord
 import humanfriendly
 import openai
-import psutil
+try:
+    import psutil  # type: ignore | So pylance will shut up
+    psutilinstalled = True
+except ModuleNotFoundError:
+    psutilinstalled = False
 import requests
 from discord.ext import commands
 
@@ -298,37 +302,49 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def stats(self, ctx):
-        uname = platform.uname()
-        cputype = cpuinfo.get_cpu_info()['brand_raw']
-        osversion = uname.version
-        ostype = uname.system
-        uptime = time.time() - starttime
-        cores = psutil.cpu_count(logical=True)
-        cpuuse = psutil.cpu_percent()
-        svmem = psutil.virtual_memory()
-        mem = utils.convert_bytes(svmem.total)
-        used = utils.convert_bytes(svmem.used)
-        percent = svmem.percent
-        partition = psutil.disk_partitions()[0]
-        partition_usage = psutil.disk_usage(partition.mountpoint)
-        disk_total = utils.convert_bytes(partition_usage.total)
-        disk_used = utils.convert_bytes(partition_usage.used)
-        disk_percent = partition_usage.percent
-        embed = discord.Embed(
-            title="Stats", description="System stats", color=0x1e00ff)
-        embed.add_field(
-            name="Uptime", value=f"{humanfriendly.format_timespan(uptime)}", inline=False)
-        embed.add_field(name="CPU", value=f"{cputype}", inline=False)
-        embed.add_field(name="CPU Usage", value=f"{cpuuse}%", inline=False)
-        embed.add_field(
-            name="OS", value=f"{ostype} ({osversion})", inline=False)
-        embed.add_field(name="Memory", value=f"{mem}", inline=False)
-        embed.add_field(
-            name="Used", value=f"{used} ({percent}%)", inline=False)
-        embed.add_field(name="Disk Total", value=f"{disk_total}", inline=False)
-        embed.add_field(name="Disk Used",
-                        value=f"{disk_used} ({disk_percent}%)", inline=False)
-        await ctx.send(embed=embed)
+        if psutilinstalled:
+            uname = platform.uname()
+            cputype = cpuinfo.get_cpu_info()['brand_raw']
+            osversion = uname.version
+            ostype = uname.system
+            uptime = time.time() - starttime
+            cores = psutil.cpu_count(logical=True)
+            cpuuse = psutil.cpu_percent()
+            svmem = psutil.virtual_memory()
+            mem = utils.convert_bytes(svmem.total)
+            used = utils.convert_bytes(svmem.used)
+            percent = svmem.percent
+            partition = psutil.disk_partitions()[0]
+            partition_usage = psutil.disk_usage(partition.mountpoint)
+            disk_total = utils.convert_bytes(partition_usage.total)
+            disk_used = utils.convert_bytes(partition_usage.used)
+            disk_percent = partition_usage.percent
+            embed = discord.Embed(
+                title="Stats", description="System stats", color=0x1e00ff)
+            embed.add_field(
+                name="Uptime", value=f"{humanfriendly.format_timespan(uptime)}", inline=False)
+            embed.add_field(name="CPU", value=f"{cputype}", inline=False)
+            embed.add_field(name="CPU Usage",
+                            value=f"{cpuuse}%", inline=False)
+            embed.add_field(
+                name="OS", value=f"{ostype} ({osversion})", inline=False)
+            embed.add_field(name="Memory", value=f"{mem}", inline=False)
+            embed.add_field(
+                name="Used", value=f"{used} ({percent}%)", inline=False)
+            embed.add_field(name="Disk Total",
+                            value=f"{disk_total}", inline=False)
+            embed.add_field(name="Disk Used",
+                            value=f"{disk_used} ({disk_percent}%)", inline=False)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("This command is disabled on this system")
+
+    @commands.command()
+    async def guide(self, ctx):
+        with open(f"{filepath}/static/guide.txt", "r") as f:
+            guide = f.read()
+            user = self.bot.get_user(ctx.message.author.id)
+            await user.send(guide)
 
 
 def setup(bot):
