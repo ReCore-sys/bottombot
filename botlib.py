@@ -1,4 +1,5 @@
 import json
+import re
 from discord.ext import commands
 import os
 import random
@@ -87,3 +88,62 @@ def stockcomment(ctx, price):
             return "\n*" + string + "*"
         else:
             return ""
+
+
+pricelist = {}
+stocklist = {}
+
+
+def getaverage(reloadstocks=False):
+    """Using the SQL module, find people's average stock price, average money and a ratio between them"""
+    # FIXME: You thought you were smart using your premade functions? Well you ain't. This does not work and you need to fix your crap.
+    # If we need to fetch the data again
+    if reloadstocks == False:
+        # Gets a list/array of all the people's money. AT LEAST IT SHOULD
+        allmoney = [int(x[0]) for x in sql.getall("money", mode="field")]
+        # Same as above, but for stocks. STILL DOESN'T FUCKING WORK
+        allstocks = [int(x[0]) for x in sql.getall("stocks", mode="field")]
+        # Gets everyone's ids
+        allusers = sql.getall("id", mode="field")
+        # Stick em in a dict
+        for x in range(len(allusers)):
+            pricelist[allusers[x]] = allmoney[x]
+            stocklist[allusers[x]] = allstocks[x]
+    # If we don't need to fetch the data again
+    else:
+        # Load it from the dictionary
+        allmoney = [pricelist[x] for x in pricelist]
+        allstocks = [stocklist[x] for x in stocklist]
+        allusers = [x for x in pricelist]
+    # Find the average of the money
+    avmoney = sum(allmoney) / len((allmoney))
+    # Find the average of the stocks
+    avstocks = sum(allstocks) / len(allstocks)
+    # Find the ratio of the two
+    avratio = avstocks / avmoney
+    return avratio
+
+
+def findchange(price, reloadstocks, id, mode):
+    """Using the SQL thing, find the average of people's stock to money ratio as a 1 to 0 value, then multiply change by that value
+    The average of people's stock to money ratio is found with the getaverage function"""
+    # Use the function above to make it do shit
+    avratio = getaverage(reloadstocks)
+    # Divide the price by 8, then multiply by the average ratio
+    # This is so the price change is capped at a 12.5% increase per stock bought
+    endcost = (price / 8) * avratio
+    # If we are not reloading the data, modify the saved data to account for the new price
+    if reloadstocks == False:
+        if mode == "buy":
+            pricelist[id] -= endcost
+            stocklist[id] += 1
+        elif mode == "sell":
+            pricelist[id] += endcost
+            stocklist[id] -= 1
+    # Return the amount the price will change by
+    return endcost
+    """
+    For example, if we had a stock price of 50 and the average ratio was 0.5, the price would change by 50 + 50/8 * 0.5 = 60.
+    This means that if you bought 3 stocks, the first would cost 50, the second would cost 50 + 50/8 * 0.5 = 60, and the third would cost 60 + 60/8 * 0.5 = 72.
+    Of course, an average ratio of 50% is pretty hard to get. At the time of writing, it is 11.8%
+    """

@@ -4,7 +4,6 @@ import asyncio
 import math
 import random
 import time
-import async_cse
 import discord
 import datetime
 import urllib.parse

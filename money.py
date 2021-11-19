@@ -121,63 +121,12 @@ def taxrate(ctx, val):
         return val - amount
 
 
-ranks = {
-    1: {
-        "price": 0,
-        "name": "Bronze",
-        "cap": 1000,
-        "loancap": 600
-    },
-    2: {
-        "price": 750,
-        "name": "Silver",
-        "cap": 7500,
-        "loancap": 1000
-    },
-    3: {
-        "price": 1500,
-        "name": "Gold",
-        "cap": 12000,
-        "loancap": 4000
-    },
-    4: {
-        "price": 5000,
-        "name": "Platinum",
-        "cap": 25000,
-        "loancap": 8500
-    },
-    5: {
-        "price": 10000,
-        "name": "Diamond",
-        "cap": 100000,
-        "loancap": 17500
-    },
-    6: {
-        "price": 20000,
-        "name": "Demigod",
-        "cap": 75000,
-        "loancap": 40000
-    },
-    7: {
-        "price": 50000,
-        "name": "Immortal",
-        "cap": 175000,
-        "loancap": 90000
-    },
-    8: {
-        "price": 100000,
-        "name": "Ascendant",
-        "cap": 200000,
-        "loancap": 100000
-    },
-    9: {
-        "price": 150000,
-        "name": "Tax Man",
-        "cap": 200000,
-        "loancap": 200000
-    }
+ranks = dict()
 
-}
+with open(f"{filepath}/json/ranks.json", "r") as f:
+    d = json.load(f)
+    for x in d:
+        ranks[int(x)] = d[x]
 
 
 namestorank = dict()
@@ -207,8 +156,8 @@ class money(commands.Cog):
         self.cost.start()
         self.IRS.start()
 
-    @commands.check(doesexist)
-    @commands.command(aliases=["acc", "balance", "bal", "a"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["acc", "balance", "bal", "a"])
     async def account(self, ctx, *, target: discord.Member = null):
 
         if settings.check(ctx.message.guild.id, "get", "economy"):
@@ -325,8 +274,8 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.check(doesexist)
-    @commands.command()
+    @ commands.check(doesexist)
+    @ commands.command()
     async def pay(self, ctx,  arg1, target: discord.Member = null):  # paying someone
         if settings.check(ctx.message.guild.id, "get", "economy"):
             # finds the balance of the sender
@@ -362,8 +311,8 @@ class money(commands.Cog):
             await ctx.send("Sorry, economy has been turned off for this server"
                            )
 
-    @commands.check(doesexist)
-    @commands.command()
+    @ commands.check(doesexist)
+    @ commands.command()
     # adds money to an account. Only I can use it
     async def add(self, ctx, arg1, target: discord.Member):
         if settings.check(ctx.message.guild.id, "get", "economy"):
@@ -375,8 +324,8 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.check(doesexist)
-    @commands.command()
+    @ commands.check(doesexist)
+    @ commands.command()
     # adds money to an account. Only I can use it
     async def set(self, ctx, arg1, target: discord.Member):
         if settings.check(ctx.message.guild.id, "get", "economy"):
@@ -389,8 +338,8 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.check(doesexist)
-    @commands.command()
+    @ commands.check(doesexist)
+    @ commands.command()
     # adds money to an account. Only I can use it
     async def setstock(self, ctx, arg1, target: discord.Member):
         if settings.check(ctx.message.guild.id, "get", "economy"):
@@ -403,9 +352,9 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.check(doesexist)
-    @commands.command(pass_context=True)
-    @commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
+    @ commands.check(doesexist)
+    @ commands.command(pass_context=True)
+    @ commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
     async def daily(self, ctx):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             if sql.doesexist(int(ctx.message.author.id)):
@@ -422,7 +371,7 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @daily.error
+    @ daily.error
     async def daily_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.reply(
@@ -431,8 +380,8 @@ class money(commands.Cog):
         else:
             raise error
 
-    @commands.check(doesexist)
-    @commands.command(aliases=["stock", "stonk", "stonks"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["stock", "stonk", "stonks"])
     async def stocks(self, ctx, action=null, count=null):
         if settings.check(ctx.message.guild.id, "get", "economy"):
             global stock
@@ -460,17 +409,20 @@ class money(commands.Cog):
 
                 stockcount = sql.get(user, "stocks")
                 bal = sql.get(ctx.message.author.id, "money")
-                try:
-                    timeto = countdown - datetime.now()
-                except:
-                    pass
+                timeto = countdown - datetime.now()
                 if action == null:
                     await ctx.send(
                         f"Current price of stocks: **{notation(cost)}**\nYou currently own {stockcount} stocks\nTime until stock price change: {humanfriendly.format_timespan(timeto)}{botlib.stockcomment(ctx, cost)}"
                     )  # if no options are specified, show current price and hw many the user owns.
                 else:
                     count = int(count)
-                    fcost = round((float(count) * cost), 2)
+                    fcost = 0
+                    if count == 1:
+                        botlib.findchange(
+                            cost, False, ctx.message.author.id, action)
+                    for x in range(count):
+                        fcost += botlib.findchange(cost, True,
+                                                   ctx.message.author.id, action)
                     if count <= 0:
                         await ctx.send(
                             "You need to enter a number that is over 0")  # if they own no stocks or can't afford any when using "all", or they try and enter a number below 1. Can't buy 0 stocks or negative stocks
@@ -502,22 +454,29 @@ class money(commands.Cog):
                             sql.take(count, user, "stocks")
                             await ctx.send(f"Since that amount of sold stocks would go over your wallet cap, you are only selling {count} stocks for {notation(fcost)}")
                     elif action == "calc":
+                        fcost = 0
+                        if count == 1:
+                            botlib.findchange(
+                                cost, False, ctx.message.author.id, action)
+                        for x in range(count):
+                            fcost += botlib.findchange(cost, True,
+                                                       ctx.message.author.id, action)
                         await ctx.send(
                             # simply calculates how much the specified stocks would cost.
-                            f"{count} stocks at {notation(cost)} is worth ${round((count * cost), 2)}"
+                            f"{count} stocks at {notation(cost)} is worth ${round(fcost, 2)}"
                         )
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.command()
+    @ commands.command()
     async def stockset(self, ctx, arg):
         if ctx.message.author.id == 451643725475479552:
             global cost
             cost = float(arg)
             await ctx.send(f"Stock price set to {arg}")
 
-    @commands.check(doesexist)
-    @commands.command(aliases=["ranks"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["ranks"])
     async def rank(self,
                    ctx,
                    ag1=null,
@@ -571,8 +530,8 @@ class money(commands.Cog):
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
-    @commands.check(doesexist)
-    @commands.command(aliases=["leaderboard", "leader", "board"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["leaderboard", "leader", "board"])
     # command to create a leaderboard of the 5 richest users.
     async def lb(self, ctx):
         # since turning the user ids to usernames is pretty slow, it is recompiled every 10 mins
@@ -625,8 +584,8 @@ class money(commands.Cog):
     # IDEA: the shops could be set up in a way so a new shop database is added and inside is this structure: {top level of dict: {user1id: [{item1: [amount, price]}, {item2: [amount, price]}]}}. This is a bit confusing but it would be a much more compact version of what it could be. Since it is using a database, it means we can use tinyDB's search function so people can search by user, item and price. I would also have a precompiled dict of everyone's id to their username so it doesn't lag heaps when opening the store and it has to find the name of every ID.
     # IDEA: Possible idea is that people can run stores and shops as separate things. When you make a store you can set the tax rate (What percentage of the selling price will go to your account) for people's stalls. Less tax rate on stores would be more popular but you would get a lot more competition. It would be a decent way for people to earn money if they can afford it but don't wanna grind out materials. This needs some heavy refinement and won't be implemented straight away but could be an interesting idea for the future.
     # IDEA: I would also need to divide shops up into pages. So we don't get every shop on 1 embed, it would shop 10 items at once and then you would go to the next page. Maybe bugger about with the menus lib? The method of doing this would probably be to compile the items into a list then devide it into a lot of parts, each made up of 10 items. Then add each one to a dict with the key being a number that increases for each page there is. Then just call that page number and loop throught the value to create an embed field. Might be pretty intense and I can't really precompile it but it would live update. I would also run a function every 10 mins to prune all shops with an item count of 0.
-    @commands.check(doesexist)
-    @commands.command(aliases=["inventory", "i"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["inventory", "i"])
     async def inv(self, ctx):
         try:
             user = ctx.message.author
@@ -643,8 +602,8 @@ class money(commands.Cog):
         except:
             await ctx.send("Your inventory is empty")
 
-    @commands.check(doesexist)
-    @commands.command(aliases=["price", "p"])
+    @ commands.check(doesexist)
+    @ commands.command(aliases=["price", "p"])
     async def prices(self, ctx):
         global prices
         global img
@@ -656,7 +615,7 @@ class money(commands.Cog):
             await ctx.send(file=discord.File(fp=img_bin, filename=f'{prices[-1][0]}.png'))
     v = 50
 
-    @tasks.loop(minutes=refresh)
+    @ tasks.loop(minutes=refresh)
     async def cost(self):
         global cost
         global refresh
@@ -673,7 +632,7 @@ class money(commands.Cog):
         while len(prices) > (60*24*2)/refresh:
             prices.pop(0)
         with open(f"{filepath}/json/prices.json", "w") as f:
-            json.dump(prices, f)
+            json.dump(prices, f, sort_keys=True, indent=4)
 
         print(
             f"stock price is {notation(cost)}\nCycle is {cycle}")
@@ -685,7 +644,7 @@ class money(commands.Cog):
                 user = await self.bot.fetch_user(x[0])
                 idtoname[x[0]] = user.name
 
-    @commands.command()
+    @ commands.command()
     async def banner(self, ctx, *, args: str = None):
         if args is None:
             await ctx.send("Please enter a url")
@@ -711,7 +670,7 @@ class money(commands.Cog):
         else:
             await ctx.send("Not enough money")
 
-    @commands.command(aliases=["loans", "carwarranty"])
+    @ commands.command(aliases=["loans", "carwarranty"])
     async def loan(self, ctx, inp1=None, inp2=None, inp3=None):
         loanrate = 15
         bal = sql.get(ctx.author.id, "money")
@@ -850,7 +809,7 @@ class money(commands.Cog):
             with open(f"{filepath}/json/taxes.json", "w") as j:
                 json.dump(r, j)
 
-    @tasks.loop(seconds=day)
+    @ tasks.loop(seconds=day)
     async def IRS(self):
         with open(filepath + "/json/taxes.json") as f:
             if os.path.getsize(f"{filepath}/json/taxes.json") == 0:
