@@ -36,19 +36,17 @@ class sql:
         table : str, optional
             name of the table to manipulate, by default None
         """
-        if db == None:
+        if db is None:
             raise SQLerror("No database specified")
-        if table == None:
+        if table is None:
             raise SQLerror("No table specified")
         self.db = sqlite3.connect(db)
         self.cursor = self.db.cursor()
         self.table = table
-        self.conversions = {
-            "STRING": "TEXT",
-            None: "NULL",
-            "FLOAT": "REAL"
-        }
+        self.conversions = {"STRING": "TEXT", None: "NULL", "FLOAT": "REAL"}
+
     try:
+
         def doesexist(self, usr: int) -> bool:
             """doesexist Checks if a user exists in the db
 
@@ -62,9 +60,8 @@ class sql:
             bool
                 True/False if they exist
             """
-            self.cursor.execute(
-                f"select * from {self.table} where id = ?", (int(usr),))
-            if self.cursor.fetchone() == None:
+            self.cursor.execute(f"select * from {self.table} where id = ?", (int(usr),))
+            if self.cursor.fetchone() is None:
                 return False
             else:
                 return True
@@ -84,7 +81,9 @@ class sql:
             """
             if self.doesexist(int(usr)):
                 self.cursor.execute(
-                    f"update {self.table} set {field} = ? where id = ?", (amount, int(usr)))
+                    f"update {self.table} set {field} = ? where id = ?",
+                    (amount, int(usr)),
+                )
                 self.db.commit()
             else:
                 raise SQLerror(f"User {usr} does not exist")
@@ -104,7 +103,9 @@ class sql:
             """
             if self.doesexist(int(usr)):
                 self.cursor.execute(
-                    f"update {self.table} set {field} = {field} + ? where id = ?", (amount, int(usr)))
+                    f"update {self.table} set {field} = {field} + ? where id = ?",
+                    (amount, int(usr)),
+                )
                 self.db.commit()
             else:
                 raise SQLerror(f"User {usr} does not exist")
@@ -123,7 +124,9 @@ class sql:
             """
             if self.doesexist(int(usr)):
                 self.cursor.execute(
-                    f"update {self.table} set {field} = {field} - ? where id = ?", (amount, int(usr)))
+                    f"update {self.table} set {field} = {field} - ? where id = ?",
+                    (amount, int(usr)),
+                )
                 self.db.commit()
             else:
                 raise SQLerror(f"User {usr} does not exist")
@@ -137,9 +140,10 @@ class sql:
             usr : int
                 The userid of the target
             """
-            if self.doesexist(int(usr)) == False:
+            if self.doesexist(int(usr)) is False:
                 self.cursor.execute(
-                    f"insert into {self.table} (id) VALUES(?)", (int(usr),))
+                    f"insert into {self.table} (id) VALUES(?)", (int(usr),)
+                )
                 self.db.commit()
             else:
                 raise SQLerror(f"User {usr} already exists")
@@ -155,7 +159,8 @@ class sql:
             """
             if self.doesexist(int(usr)):
                 self.cursor.execute(
-                    f"DELETE FROM {self.table} WHERE id = ?", (int(usr),))
+                    f"DELETE FROM {self.table} WHERE id = ?", (int(usr),)
+                )
                 self.db.commit()
             else:
                 raise SQLerror(f"User {usr} does not exist")
@@ -189,11 +194,19 @@ class sql:
             SQLerror
                 Data type is not valid
             """
-            if datatype.upper() in ["INT", "DATE", "TEXT", "STRING", "NULL", None, "REAL", "FLOAT"]:
+            if datatype.upper() in [
+                "INT",
+                "DATE",
+                "TEXT",
+                "STRING",
+                "NULL",
+                None,
+                "REAL",
+                "FLOAT",
+            ]:
                 if datatype.upper() in self.conversions:
                     datatype = self.conversions[datatype]
-                self.cursor.execute(
-                    f"ALTER TABLE {self.table} ADD {field} {datatype}")
+                self.cursor.execute(f"ALTER TABLE {self.table} ADD {field} {datatype}")
                 self.db.commit()
             else:
                 raise SQLerror("Invalid data type")
@@ -216,9 +229,10 @@ class sql:
                 The result of the search
             """
             self.cursor.execute(
-                f"select {field} from {self.table} where id = ?", (int(usr),))
+                f"select {field} from {self.table} where id = ?", (int(usr),)
+            )
             res = self.cursor.fetchone()
-            if res != None:
+            if res is not None:
                 return res[0]
             else:
                 return None
@@ -246,8 +260,7 @@ class sql:
                 mode["mode"] = "id"
 
             if mode["mode"] == "id":
-                self.cursor.execute(
-                    f"select * from {self.table} where id = {inp}")
+                self.cursor.execute(f"select * from {self.table} where id = {inp}")
                 res = self.cursor.fetchall()
                 if res != []:
                     return res
@@ -256,7 +269,8 @@ class sql:
             else:
                 if "condition" in mode:
                     self.cursor.execute(
-                        f"select {inp} from {self.table} where {mode['condition']}")
+                        f"select {inp} from {self.table} where {mode['condition']}"
+                    )
                     res = self.cursor.fetchall()
                     if res != []:
                         return res
@@ -267,15 +281,15 @@ class sql:
                 else:
                     if "condition" in mode:
                         self.cursor.execute(
-                            f"select {inp} from {self.table} where {mode['condition']}")
+                            f"select {inp} from {self.table} where {mode['condition']}"
+                        )
                         res = self.cursor.fetchall()
                         if res != []:
                             return res
                         else:
                             return None
                     else:
-                        self.cursor.execute(
-                            f"select {inp} from {self.table}")
+                        self.cursor.execute(f"select {inp} from {self.table}")
                         res = self.cursor.fetchall()
                         if res != []:
                             return res
@@ -286,4 +300,5 @@ class sql:
         # If a keyboard interupt is called, close the db
         def closedb(self):
             self.db.close()
+
         closedb()

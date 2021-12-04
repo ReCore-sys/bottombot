@@ -1,9 +1,9 @@
 import json
-import re
-from discord.ext import commands
 import os
 import random
+
 import sqlbullshit
+
 banned_ids = []
 paid_ids = []
 filepath = os.path.abspath(os.path.dirname(__file__))
@@ -17,6 +17,12 @@ with open(f"{filepath}/json/configs.json", "r") as f:
 """CHECK FUNCTION"""
 
 
+class BotError(Exception):
+    """Custom exception for the bot"""
+
+    pass
+
+
 def check_banned(ctx):
     if ctx.author.id in banned_ids:
         return False
@@ -24,7 +30,21 @@ def check_banned(ctx):
 
 
 def nope():
-    return random.choice(["Did you really think that would work?", "I'm not stupid, you are banned", "Begone", "Nope", "All aboard the nope train to nahland", "Twat", "How about no", "Haha no", "God has forsaken you", "November Oscar Tango Golf Uniform November November Alpha Hotel Alpha Papa Papa Echo November", r"\:/"])
+    return random.choice(
+        [
+            "Did you really think that would work?",
+            "I'm not stupid, you are banned",
+            "Begone",
+            "Nope",
+            "All aboard the nope train to nahland",
+            "Twat",
+            "How about no",
+            "Haha no",
+            "God has forsaken you",
+            "November Oscar Tango Golf Uniform November November Alpha Hotel Alpha Papa Papa Echo November",
+            r"\:/",
+        ]
+    )
 
 
 def nametoid(name):
@@ -83,8 +103,9 @@ def stockcomment(ctx, price):
             if j[comp] == []:
                 return ""
             # if it does exist, pick a random comment from the list and format it with the user's name, then return it
-            string = random.choice(j[comp]).format(
-                ctx.author.name)
+            string = random.choice(j[comp]).format(ctx.author.name)
+            if "http" in string:
+                return ("url", string)
             return "\n*" + string + "*"
         else:
             return ""
@@ -98,7 +119,7 @@ def getaverage(reloadstocks=False):
     """Using the SQL module, find people's average stock price, average money and a ratio between them"""
     # FIXME: You thought you were smart using your premade functions? Well you ain't. This does not work and you need to fix your crap.
     # If we need to fetch the data again
-    if reloadstocks == False:
+    if reloadstocks is False:
         # Gets a list/array of all the people's money. AT LEAST IT SHOULD
         allmoney = [int(x[0]) for x in sql.getall("money", mode="field")]
         # Same as above, but for stocks. STILL DOESN'T FUCKING WORK
@@ -133,7 +154,7 @@ def findchange(price, reloadstocks, id, mode):
     # This is so the price change is capped at a 12.5% increase per stock bought
     endcost = (price / 8) * avratio
     # If we are not reloading the data, modify the saved data to account for the new price
-    if reloadstocks == False:
+    if reloadstocks is False:
         if mode == "buy":
             pricelist[id] -= endcost
             stocklist[id] += 1
@@ -147,3 +168,18 @@ def findchange(price, reloadstocks, id, mode):
     This means that if you bought 3 stocks, the first would cost 50, the second would cost 50 + 50/8 * 0.5 = 60, and the third would cost 60 + 60/8 * 0.5 = 72.
     Of course, an average ratio of 50% is pretty hard to get. At the time of writing, it is 11.8%
     """
+
+
+def configs(section=None, key=None):
+    """Loads the configs from the json file"""
+    with open(f"{filepath}/json/configs.json", "r") as f:
+        configs = json.load(f)
+        if section not in configs:
+            raise BotError("Section not found in configs")
+        if key is None:
+            return configs
+        else:
+            if key not in configs[section]:
+                raise BotError("Key not found in configs")
+            else:
+                return configs[section][key]

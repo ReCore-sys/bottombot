@@ -1,18 +1,11 @@
 # this will be a file to manage the hellhole that will be cross server chat. Dear god. Help me please.
+
 import os
-import asyncio
-import math
-import random
-import time
-import discord
-import datetime
-import urllib.parse
-from async_timeout import timeout
-from discord.ext import menus, commands, tasks
-import botlib
-import bottomlib
-import money
+
+from discord.ext import commands, tasks
+
 import settings
+import utils
 
 # init stuff
 filepath = os.path.abspath(os.path.dirname(__file__))
@@ -32,15 +25,20 @@ class cross(commands.Cog):
     @commands.command()
     # command to set up connecting servers. It's all in variables, so resetting will wipe all connections
     async def join(self, ctx):
+        utils.log(ctx)
         if settings.check(ctx.message.guild.id, "get", "cross"):
             # ok cos I can't really be bothered, whenever I refer to a server's id in this bit, I mean the channel, not server
             global waiting
             global servers
-            if waiting == None:  # if no one is in the list, join it
+            if waiting is None:  # if no one is in the list, join it
                 await ctx.send("Ok, added you to the waiting list")
                 waiting = ctx.message.channel.id  # sets the waitlist to your server id
-            elif waiting == ctx.message.channel.id:  # if the waitlist is your server id, don't do anything
-                await ctx.send("You are the only one in the list right now. Do -leave to take youself out of the list")
+            elif (
+                waiting == ctx.message.channel.id
+            ):  # if the waitlist is your server id, don't do anything
+                await ctx.send(
+                    "You are the only one in the list right now. Do -leave to take youself out of the list"
+                )
             elif ctx.message.channel.id in servers:
                 await ctx.send("You are currently in a conversation")
             else:  # ok this is the funky bit. If someone else is in the list, we start a conversation with them
@@ -53,7 +51,7 @@ class cross(commands.Cog):
                 waiting = None
                 try:
                     waiting.remove[ctx.message.channel.id]
-                except:
+                except KeyError:
                     pass  # empties the wait list so other servers can join
                 await ctx.send("Ok, connected you to another server")
                 address = self.bot.get_channel(int(otherchannel))
@@ -67,18 +65,24 @@ class cross(commands.Cog):
         global servers
         global messages
         if ("-" not in message.content) and ("_" not in message.content):
-            if (message.author.id != 822023355947155457) and (message.author.id != 758912539836547132):
-                if message.channel.id in servers:  # if your id is in the list of servers, write your message and server id to the list of pending messages
+            if (message.author.id != 822023355947155457) and (
+                message.author.id != 758912539836547132
+            ):
+                # if your id is in the list of servers, write your message and server id to the list of pending messages
+                if message.channel.id in servers:
                     message1 = message.content
-                    unicode = u"\uFF20"
-                    message1 = message1.replace('@', unicode)
+                    unicode = "\uFF20"
+                    message1 = message1.replace("@", unicode)
                     # msg = [address, "sender : message"]
-                    msg = [int(servers[message.channel.id]),
-                           f"{message.author} : {message1}"]
+                    msg = [
+                        int(servers[message.channel.id]),
+                        f"{message.author} : {message1}",
+                    ]
                     messages.append(msg)
 
     @commands.command()
     async def leave(self, ctx):
+        utils.log(ctx)
         global waiting
         global servers
         if settings.check(ctx.message.guild.id, "get", "cross"):
@@ -107,7 +111,11 @@ class cross(commands.Cog):
     async def checker(self):
         global messages
         global servers
-        for x in messages:  # for every entry in the messages list, pull the message and the address, send it off, then remove it from the list. I would have used a string instead of a list, but this means we can have more than one message pending at once
+        for (
+            x
+        ) in (
+            messages
+        ):  # for every entry in the messages list, pull the message and the address, send it off, then remove it from the list. I would have used a string instead of a list, but this means we can have more than one message pending at once
             address = x[0]
             message = x[1]
             address = self.bot.get_channel(int(address))
@@ -116,4 +124,5 @@ class cross(commands.Cog):
 
 
 def setup(bot: commands.Bot):
+
     bot.add_cog(cross(bot))

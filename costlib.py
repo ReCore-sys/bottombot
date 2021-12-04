@@ -1,21 +1,27 @@
 """The dark magic that generates stock prices. Put in the last price and some deep magic from before time and out will pop the next stock price"""
-import random
 import os
+import random
+
+import botlib
 
 
 def gencost(cost):
 
     random.seed(os.urandom(32))
     rand = random.randint(1, 100)
+    upper = botlib.configs("stocks", "upper")
+    lower = botlib.configs("stocks", "lower")
+    jumpup = botlib.configs("stocks", "jumpup")
+    jumpdown = botlib.configs("stocks", "jumpdown")
     if rand > cost:
-        cost = cost + random.uniform(0.3, 1.5)
+        cost = cost + random.uniform(lower, upper)
     else:
-        cost = cost - random.uniform(0.3, 1.5)
+        cost = cost - random.uniform(lower, upper)
     cost = round(cost, 2)
-    randomchance = random.randint(1, 1000)
-    if randomchance == 1:
+    randomchance = random.uniform(0, 1)
+    if randomchance < jumpup:
         cost += 50
-    elif randomchance == 2:
+    elif randomchance < jumpdown:
         if (cost - 50) < 10:
             cost = 10
         else:
@@ -23,5 +29,5 @@ def gencost(cost):
     return cost
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(gencost(50))
