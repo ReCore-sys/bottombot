@@ -27,7 +27,7 @@ def in_wsl() -> bool:
         return "microsoft-standard" in platform.uname().release
 
 
-isbeta = False
+isbeta = in_wsl()
 
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
 filepath = os.path.abspath(os.path.dirname(__file__))
@@ -35,13 +35,13 @@ filepath = os.path.abspath(os.path.dirname(__file__))
 sql = sqlbullshit.sql(filepath + "/data.db", "user")
 
 if isbeta:
-    token = secret_data.token
-    prefix = "-"
-    print("Running linux")
-else:
     token = secret_data.test_token
     prefix = "_"
     print("Running beta mode")
+else:
+    token = secret_data.token
+    prefix = "-"
+    print("Running linux")
 null = None  # so I can write "null" instead of "None" and look like hackerman
 
 intents = discord.Intents.default()

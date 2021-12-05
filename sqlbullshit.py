@@ -211,7 +211,7 @@ class sql:
             else:
                 raise SQLerror("Invalid data type")
 
-        def get(self, usr: int, field: str) -> int | str:
+        def get(self, usr: int, field: str) -> int:
             """get
             \nGets a specific value from the database
             \nUse collums() to list all available fields
@@ -237,7 +237,7 @@ class sql:
             else:
                 return None
 
-        def getall(self, inp: int | str, **mode: str) -> list:
+        def getall(self, inp: str, **mode: str) -> list:
             """getall
             \nGets all results
 
