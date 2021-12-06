@@ -1,4 +1,3 @@
-import json
 import math
 import operator
 import os
@@ -11,9 +10,9 @@ from datetime import datetime, timedelta
 from io import BytesIO
 
 import discord
-import discord.ext
 import humanfriendly
 import requests
+import ujson as json
 from discord.ext import commands, tasks
 from num2words import num2words
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -607,28 +606,6 @@ class money(commands.Cog):
         )
         await ctx.send(embed=lb)
 
-    # IDEA: How do players get materials to sell? If anyone can get the materials easily, there is no point in having shops so it needs an element of randomness. Myabe a lootbox sort of system? That could be interesting. Another option is you do stuff like -mine or -cut to get base materials. The base materials can then be crafted into more advanced stuff. -mine and -cut would have a cooldown. Also doing -mine would yeild stone, a small bit of metal, and very rarely gems. This way you have an element of randomness but can still be player directed. This could be interesting but would need HEAVY balancing.
-    # IDEA: the shops could be set up in a way so a new shop database is added and inside is this structure: {top level of dict: {user1id: [{item1: [amount, price]}, {item2: [amount, price]}]}}. This is a bit confusing but it would be a much more compact version of what it could be. Since it is using a database, it means we can use tinyDB's search function so people can search by user, item and price. I would also have a precompiled dict of everyone's id to their username so it doesn't lag heaps when opening the store and it has to find the name of every ID.
-    # IDEA: Possible idea is that people can run stores and shops as separate things. When you make a store you can set the tax rate (What percentage of the selling price will go to your account) for people's stalls. Less tax rate on stores would be more popular but you would get a lot more competition. It would be a decent way for people to earn money if they can afford it but don't wanna grind out materials. This needs some heavy refinement and won't be implemented straight away but could be an interesting idea for the future.
-    # IDEA: I would also need to divide shops up into pages. So we don't get every shop on 1 embed, it would shop 10 items at once and then you would go to the next page. Maybe bugger about with the menus lib? The method of doing this would probably be to compile the items into a list then devide it into a lot of parts, each made up of 10 items. Then add each one to a dict with the key being a number that increases for each page there is. Then just call that page number and loop throught the value to create an embed field. Might be pretty intense and I can't really precompile it but it would live update. I would also run a function every 10 mins to prune all shops with an item count of 0.
-    @commands.check(doesexist)
-    @commands.command(aliases=["inventory", "i"])
-    async def inv(self, ctx):
-        utils.log(ctx)
-        try:
-            user = ctx.message.author
-            head, sep, tail = str(user).partition("#")
-            uitems = shop.owneditems(ctx.message.author.id)[str(ctx.message.author.id)]
-            embed = discord.Embed(
-                title=f"{head}'s Items", description="Owned items", color=0x8800FF
-            )
-            embed.set_thumbnail(url=user.avatar_url)
-            for x in uitems:
-                embed.add_field(name=x, value=uitems[x], inline=True)
-            await ctx.send(embed=embed)
-        except Exception:
-            await ctx.send("Your inventory is empty")
-
     @commands.check(doesexist)
     @commands.command(aliases=["price", "p"])
     async def prices(self, ctx):
@@ -645,37 +622,6 @@ class money(commands.Cog):
             )
 
     v = 50
-
-    @tasks.loop(minutes=refresh)
-    async def cost(self):
-        global cost
-        global refresh
-        global cycle
-        global countdown
-        global img
-        print(f"Refresh: {refresh}")
-
-        countdown = datetime.now() + timedelta(minutes=refresh)
-        cycle = cycle + 1
-        cost = costlib.gencost(cost)
-        prices.append((cycle, cost))
-        img = None
-        while len(prices) > (60 * 24 * 2) / refresh:
-            prices.pop(0)
-        with open(f"{filepath}/json/prices.json", "w") as f:
-            json.dump(prices, f, sort_keys=True, indent=4)
-
-        print(f"stock price is {notation(cost)}\nCycle is {cycle}")
-        await self.bot.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
-                name=f"Stock price at {notation(cost)}",
-            )
-        )
-        if cycle > 1:
-            for x in sql.getall("id", mode="field"):
-                user = await self.bot.fetch_user(x[0])
-                idtoname[x[0]] = user.name
 
     @commands.command()
     async def banner(self, ctx, *, args: str = None):
@@ -898,6 +844,40 @@ class money(commands.Cog):
             droppers = list()
             with open(filepath + "/taxes.json", "w") as fw:
                 json.dump(f, fw)
+
+    @tasks.loop(minutes=refresh)
+    async def cost(self):
+        global cost
+        global refresh
+        global cycle
+        global countdown
+        global img
+        print(f"Refresh: {refresh} mins")
+
+        countdown = datetime.now() + timedelta(minutes=refresh)
+        cycle = cycle + 1
+        cost = costlib.gencost(cost)
+        prices.append((cycle, cost))
+        img = None
+        while len(prices) > (60 * 24 * 2) / refresh:
+            prices.pop(0)
+        with open(f"{filepath}/json/prices.json", "w") as f:
+            json.dump(prices, f, sort_keys=True, indent=4)
+
+        print(f"Stock price is {notation(cost)}")
+        print(f"Cycle: {cycle}")
+        await self.bot.change_presence(
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name=f"Stock price at {notation(cost)}",
+            )
+        )
+        try:
+            for x in sql.getall("id", mode="field"):
+                user = await self.bot.fetch_user(x[0])
+                idtoname[x[0]] = user.name
+        except sqlbullshit.SQLerror:
+            pass
 
 
 def setup(bot: commands.Bot):

@@ -391,7 +391,11 @@ class Misc(commands.Cog):
             value=f"{humanfriendly.format_timespan(uptime)}",
             inline=False,
         )
-        embed.add_field(name="CPU", value=f"{cputype} ({cores} cores)", inline=False)
+        embed.add_field(
+            name="CPU",
+            value=f"{cputype} {f'({cores} cores)' if psutilinstalled == True else ''}",
+            inline=False,
+        )
         if psutilinstalled:
             embed.add_field(name="CPU Usage", value=f"{cpuuse}%", inline=False)
             embed.add_field(name="OS", value=f"{ostype} ({osversion})", inline=False)

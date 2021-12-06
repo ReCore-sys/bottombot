@@ -1,10 +1,10 @@
 import re
+
 import requests
 
 
 def is_url_image(image_url):
-    image_formats = ("image/png", "image/jpeg",
-                     "image/jpg", "image/webp")
+    image_formats = ("image/png", "image/jpeg", "image/jpg", "image/webp")
 
     r = requests.head(image_url)
     if r.headers["content-type"] in image_formats:
@@ -28,15 +28,13 @@ def sorter(url):
 
 def imgflip(url):
     content = str(requests.get(url).text)
-    regex = re.compile(
-        """src='(//i.imgflip.com/.+)'""")
+    regex = re.compile("""src='(//i.imgflip.com/.+)'""")
     img_url = regex.search(content).group(1)
     return "https:" + img_url.replace("\\", "//")
 
 
 def imgur(url):
     content = str(requests.get(url).text)
-    regex = re.compile(
-        'content="(https://i.imgur.com/.+\.jpg)"')
+    regex = re.compile('content="(https://i.imgur.com/.+\.jpg)"')
     img_url = regex.search(content).group(1)
     return img_url.replace("\\", "//")

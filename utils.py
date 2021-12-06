@@ -101,5 +101,5 @@ def log(ctx):
     gid = ctx.guild.id
     timestring = time.strftime("%Y-%m-%d %H:%M:%S")
     log = f"{timestring} | {guild} ({gid}) | {uname} ({uid}) | #{channel} | {cmd}\n"
-    with open(f"{filepath}/commandlogs/{time.strftime('%Y-%m-%d')}.log", "a+") as f:
+    with open(f"{filepath}/logs/{time.strftime('%Y-%m-%d')}.log", "a+") as f:
         f.write(log)

@@ -7,7 +7,10 @@ import zipfile
 from datetime import datetime
 from threading import Thread
 
+import sqlbullshit
+
 filepath = os.path.abspath(os.path.dirname(__file__))
+
 
 day = 60 * 60 * 24
 
@@ -19,6 +22,13 @@ def in_wsl() -> bool:
         return False
     else:
         return "microsoft-standard" in platform.uname().release
+
+
+def updatedb(added: str):
+    sql = sqlbullshit.sql(f"{filepath}/data.db", "user")
+    collums = sql.collums()
+    if added not in collums:
+        sql.addcollum(added, "TEXT")
 
 
 def compresslogs():
@@ -82,15 +92,18 @@ def backup():
                         f"{filepath}/{t}.zpaq", fr"/{filepath}/backups/{t}.zpaq"
                     )
                 # If it doesn't work, keep the zip file
-                # trunk-ignore(flake8/E722)
-                except:
+                except OSError:
                     shutil.move(f"{filepath}/{t}.zip", fr"/{filepath}/backups/{t}.zip")
             time.sleep(day)
     print("Backup loop not run on the non-linux system")
 
 
 def begin():
-    threads = [Thread(target=backup, name="Database backup")]
+    threads = [
+        Thread(target=backup, name="Database backup"),
+        Thread(target=compresslogs, name="Log compression"),
+        Thread(target=updatedb, name="Database collumn update", args=("inv",)),
+    ]
 
     for x in threads:
         x.start()

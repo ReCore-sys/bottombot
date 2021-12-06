@@ -3,10 +3,12 @@ import json
 import os
 import platform
 import random
+from distutils.command.config import config
 
 import discord
 from discord.ext import commands
 
+import botlib
 import secret_data
 import setup
 import sqlbullshit
@@ -49,14 +51,14 @@ intents.members = True
 
 client = discord.Client()
 client = commands.Bot(command_prefix=prefix, intents=intents)
-canwelcome = False
+canwelcome = botlib.configs("welcome")
 client.remove_command("help")
 starttime = null
 
 
 @client.event
 async def on_ready():
-    if platform.system() == "Windows":
+    if isbeta == "Windows":
         await client.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching, name="Testing"
@@ -82,7 +84,7 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    modules = ["money", "cross", "modules", "bounty", "shop", "admin", "misc"]
+    modules = ["money", "cross", "modules", "bounty", "admin", "misc", "shop"]
     for x in modules:
         client.load_extension(x)
     # We sleep here so wavelink has time to get set up
@@ -121,8 +123,8 @@ async def on_guild_join(guild):
     f = open(f"{filepath}/json/servers.json", "w")
     json.dump(data, f)
     f.close()
-    for channel in guild.text_channels:
-        if canwelcome:
+    if canwelcome:
+        for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 await channel.send(
                     "Heyo! I am bottombot, a cancerous mess. You can join my discord server here: https://discord.gg/2WaddNnuHh \nYou can also invite the bot to other servers with this link: https://discord.com/api/oauth2/authorize?client_id=758912539836547132&permissions=8&scope=bot \nUse -help to find out what commands I can use!"
