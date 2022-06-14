@@ -4,14 +4,12 @@ import os
 import platform
 import random
 import re
-from operator import indexOf
-from tabnanny import check
 
 import discord
 from discord.ext import commands
 
 import botlib
-import secret_data
+import secretdata
 import setup
 import sqlbullshit
 import utils
@@ -24,11 +22,8 @@ with open(f"{filepath}/banner.txt", "r", encoding="utf-8") as f:
 print("\u001b[0m")
 
 
-def in_wsl() -> bool:
-    if os.name == "nt":
-        return True
-    else:
-        return "microsoft-standard" in platform.uname().release
+def onwindows() -> bool:
+    return os.name == "nt"
 
 
 async def statistics(cid):
@@ -89,21 +84,15 @@ async def statistics(cid):
         json.dump(stats, f)
 
 
-isbeta = in_wsl()
+isbeta = onwindows()
 
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 sql = sqlbullshit.sql(filepath + "/data.db", "user")
 
-if isbeta:
-    token = secret_data.test_token
-    prefix = "_"
-    print("Running beta mode")
-else:
-    token = secret_data.token
-    prefix = "-"
-    print("Running linux")
+token = secretdata.token
+prefix = "-"
 null = None  # so I can write "null" instead of "None" and look like hackerman
 
 intents = discord.Intents.default()
@@ -145,7 +134,8 @@ async def on_ready():
     if isbeta is False:
         with open(f"{filepath}/logs.txt", "a") as f:
             f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
-    modules = ["money", "cross", "modules", "bounty", "admin", "misc", "shop", "private"]
+    modules = ["money", "cross", "modules",
+               "bounty", "admin", "misc", "shop", "private"]
     for x in modules:
         client.load_extension(x)
     # We sleep here so wavelink has time to get set up

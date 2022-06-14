@@ -21,7 +21,7 @@ import botlib
 import costlib
 import graph
 import imageyoink
-import secret_data
+import secretdata
 import settings
 import sqlbullshit
 import utils
@@ -152,7 +152,6 @@ class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cost.start()
-        self.IRS.start()
 
     @commands.check(doesexist)
     @commands.command(aliases=["acc", "balance", "bal", "a"])
@@ -228,7 +227,7 @@ class money(commands.Cog):
             # to a 3.8TB image of heavy from tf2 then crashing this whole thing
             img = img.resize((180, 180), Image.ANTIALIAS)
             # Give me a red border and everyone else a black one. Cos I wanna be special.
-            if tuser.id in secret_data.admins:
+            if tuser.id in secretdata.admins:
                 img = ImageOps.expand(img, border=5, fill="red")
             else:
                 img = ImageOps.expand(img, border=5, fill="black")
@@ -294,7 +293,20 @@ class money(commands.Cog):
             elif (
                 amount.isnumeric is False
             ):  # if you try paying someone something that isn't a number
-                await ctx.send("You need to give me a number")
+                if amount == "all":
+                    mybal = sql.get(ctx.message.author.id, "money")
+                    targetbal = sql.get(thrid, "money")
+                    targetrank = sql.get(thrid, "rank")
+                    with open(f"{filepath}/static/ranks.json") as f:
+                        ranks = json.load(f)
+                        rankcap = ranks[str(targetrank)]["cap"]
+                    remaining = rankcap - targetbal
+                    if remaining > mybal:
+                        amount = mybal
+                    else:
+                        amount = remaining
+                else:
+                    await ctx.send("You need to give me a number")
             elif thrid == ctx.message.author.id:  # if you try paying yourself
                 await ctx.send("You can't pay yourself")
             elif int(amount) < 1:
@@ -529,10 +541,10 @@ class money(commands.Cog):
             else:  # if they do have it, start doing stuff
                 crank = sql.get(int(user), "rank")
                 crankv = ranks[crank]["price"]
-                if rank not in namestorank:
+                if rank.lower() not in namestorank:
                     await ctx.send("That rank doesn't exist")
                     return
-                val = ranks[namestorank[rank]]["price"]
+                val = ranks[namestorank[rank.lower()]]["price"]
                 if rank == null:
                     # if they don't enter a rank to buy
                     await ctx.send("Please choose a rank to buy")
@@ -550,12 +562,16 @@ class money(commands.Cog):
                     cost = (
                         0 - val
                     )  # turn the value into a negative so you can buy it properly
-                    rnum = namestorank[rank]
+                    rnum = namestorank[rank.lower()]
                     sql.set(rnum, user, "rank")
                     # takes the money from the account (adds a negative value)
                     sql.add(cost, user, "money")
                     # let them know
-                    await ctx.send(f"Rank {rank} was bought for {notation(val)}")
+                    await ctx.send(f"Rank {rank.lower()} was bought for {notation(val)}")
+                    if sql.get(user, "rank") == 22:
+                        await ctx.send("Good job, you beat the game. What now?")
+                        sql.set(1, user, "money")
+                        sql.set(0, user, "stocks")
         else:
             await ctx.send("Sorry, economy is disabled on this server")
 
@@ -657,217 +673,6 @@ class money(commands.Cog):
                 await ctx.send("That is not a valid image")
         else:
             await ctx.send("Not enough money")
-
-    @commands.command(aliases=["loans", "carwarranty"])
-    async def loan(self, ctx, inp1=None, inp2=None, inp3=None):
-        utils.log(ctx)
-        loanrate = 15
-        bal = sql.get(ctx.author.id, "money")
-        owed = sql.get(ctx.author.id, "loans")
-        cs = sql.get(ctx.author.id, "creditscore")
-        loancap = ranks[sql.get(ctx.author.id, "rank")]["loancap"]
-
-        reg = re.compile(r"\d+\.?\d*")
-
-        with open(f"{filepath}/json/taxes.json", "r") as r:
-            r = json.load(r)
-            if str(ctx.author.id) in r:
-                unpaid = r[str(ctx.author.id)]["amount"]
-            else:
-                unpaid = 0
-            if inp1 == "take":
-                if inp2 is None:
-                    await ctx.send("Please give an amount")
-                    return
-                isnum = False if reg.search(inp2) is None else True
-                if isnum:
-                    inp2 = reg.search(inp2).group(0)
-                    val = float(inp2)
-                    if val > loancap:
-                        await ctx.send(
-                            f"Sorry, that goes over your loan cap ({notation(loancap)})"
-                        )
-                        return
-
-                    if owed > 200:
-                        await ctx.send(
-                            "Sorry, you already owe a fair bit of money. Pay some off then try later."
-                        )
-                    elif cs <= -25:
-                        await ctx.send("Sorry, your credit score is too low.")
-                    else:
-                        if val < 1:
-                            await ctx.send("You can't take out that amount")
-                            return
-                        tax = (val / 100) * loanrate
-                        if str(ctx.author.id) in r:
-                            loancost = owed + val + tax
-                            r[str(ctx.author.id)]["amount"] = unpaid + loancost
-                            sql.add(val, ctx.author.id, "money")
-                            await ctx.send(
-                                f"You took out a loan of {notation(val)}. You have 2 days to pay it off, plus a {loanrate}% fee."
-                            )
-                        else:
-                            loancost = val + tax
-                            r[str(ctx.author.id)] = {
-                                "amount": val + tax,
-                                "time": time.time(),
-                            }
-                            sql.add(val, ctx.author.id, "money")
-                            sql.take(round(val/400),
-                                     ctx.author.id, "creditscore")
-                            await ctx.send(
-                                f"You took out a loan of {notation(val)}. You have 2 days to pay it off, plus a {loanrate}% fee."
-                            )
-                else:
-                    await ctx.send("That was not a valid input")
-            elif inp1 == "pay":
-                if inp2 is None:
-                    await ctx.send("Please give an amount")
-                    return
-                if (str(ctx.author.id) not in r) and (
-                    sql.get(ctx.author.id, "loans") <= 0
-                ):
-                    await ctx.send("You don't have any loans dumbass")
-                    return
-                if inp2 is None:
-                    if (bal < unpaid and bal < owed) or (bal < int(inp2)):
-                        await ctx.send(
-                            f"Sorry, you don't have enough to pay off the loan. You need another {notation(owed - bal)}"
-                        )
-                    else:
-                        if bal >= unpaid and unpaid != 0:
-                            r.pop(str(ctx.author.id))
-                            sql.take(unpaid, ctx.author.id, "money")
-                            await ctx.send("You just paid off your loan! Well done!")
-                        elif bal >= owed:
-                            sql.set(0, ctx.author.id, "loans")
-                            sql.take(owed, ctx.author.id, "money")
-                            await ctx.send("You just paid off your debt! Well done!")
-                else:
-                    isnum = False if reg.search(inp2) is None else True
-                    if isnum is False:
-                        await ctx.send("That was not a valid input")
-                    else:
-                        inp2 = reg.search(inp2).group(0)
-                        amount = float(inp2)
-                        if amount < 1:
-                            await ctx.send(
-                                f"Sorry, you can't pay less than {notation(1)}"
-                            )
-
-                        else:
-                            if unpaid > 0:
-                                if amount < unpaid:
-                                    r[str(ctx.author.id)
-                                      ]["amount"] = unpaid - amount
-                                    sql.take(amount, ctx.author.id, "money")
-                                    sql.add(round(amount/300),
-                                            ctx.author.id, "loans")
-                                    await ctx.send(
-                                        f"Well done, you just paid off {notation(amount)} of your loan!"
-                                    )
-                                else:
-                                    r.pop(str(ctx.author.id))
-                                    sql.take(unpaid, ctx.author.id, "money")
-                                    sql.add(round(unpaid/300),
-                                            ctx.author.id, "loans")
-                                    await ctx.send(
-                                        "You just paid off your loan! Well done!"
-                                    )
-                            else:
-                                if amount < owed:
-                                    sql.take(amount, ctx.author.id, "loans")
-                                    sql.take(amount, ctx.author.id, "money")
-                                    sql.add(round(amount/300),
-                                            ctx.author.id, "loans")
-                                    await ctx.send(
-                                        f"Well done, you just paid off {notation(amount)} of your debt!"
-                                    )
-                                else:
-                                    sql.set(0, ctx.author.id, "loans")
-                                    sql.take(owed, ctx.author.id, "money")
-                                    sql.add(round(owed/300),
-                                            ctx.author.id, "loans")
-                                    await ctx.send(
-                                        "Well done, you just paid off of your debt!"
-                                    )
-
-            else:
-                # Send the user a nice embed to show them their current loans
-                if str(ctx.author.id) not in r and owed == 0:
-                    await ctx.send("You don't have any loans")
-                else:
-
-                    if unpaid > 0:
-                        timeremaining = time.strftime(
-                            "%H:%M:%S",
-                            time.gmtime(r[str(ctx.author.id)]
-                                        ["time"] - time.time()),
-                        )
-                        embed = discord.Embed(
-                            title=f"{ctx.author.name}'s Loans",
-                            description=f"You have a loan of {notation(unpaid)} due in {timeremaining}",
-                            color=discord.Color.blue(),
-                        )
-                        if owed > 0:
-                            embed.add_field(
-                                name="You also owe", value=f"{notation(owed)}"
-                            )
-                    else:
-                        embed = discord.Embed(
-                            title=f"{ctx.author.name}'s debt",
-                            description=f"You have a debt of {notation(owed)}.",
-                            color=discord.Color.blue(),
-                        )
-                    embed.add_field(name="Credit score", value=cs)
-                    embed.set_footer(
-                        text=f"You have {notation(round(bal, 2))}")
-                    await ctx.send(embed=embed)
-
-            with open(f"{filepath}/json/taxes.json", "w") as j:
-                json.dump(r, j)
-
-    @tasks.loop(seconds=day)
-    async def IRS(self):
-        with open(filepath + "/json/taxes.json") as f:
-            if os.path.getsize(f"{filepath}/json/taxes.json") == 0:
-                with open(filepath + "/taxes.json", "w") as fw:
-                    ob = {"0": -1}
-                    json.dump(ob, fw)
-            f = json.load(f)
-            f = dict(f)
-            droppers = []
-            for x in f:
-                if x != "0":
-                    amount = f[x]["amount"]
-                    t = f[x]["time"]
-                    if t < time.time() + payday:
-                        sqlt = sqlbullshit.sql("data.db", "user")
-                        try:
-                            sqlt.add(amount, int(x), "loans")
-                            droppers.append(x)
-                            user = self.bot.get_user(int(x))
-                            name = await self.bot.fetch_user(int(x))
-                            name = name.display_name
-                            if random.randint(0, 100) == 1:
-                                msg = f"Hello {name}, we have been trying to reach you about your car's extended warrenty. Please check in with us by running -carwarranty"
-                            else:
-                                msg = f"""So, {name}, I hear you haven't paid back your loan of {notation(amount)}. Good for you, I'm in a nice mood.
-\nI'm going to start just taking your money, kapish? It's that or your kneecaps.
-\nDon't make me send Vinny around again. I hope you remember what happened to your kids last time."""
-                            await user.send(msg)
-                        except sqlbullshit.SQLerror:
-                            user = self.bot.get_user(int(451643725475479552))
-                            await user.send(
-                                f"A user with the id {x} has caused problems by not existing. pls fix"
-                            )
-            if droppers != []:
-                for x in droppers:
-                    f.pop(x)
-                droppers = list()
-                with open(filepath + "/taxes.json", "w") as fw:
-                    json.dump(f, fw)
 
     @tasks.loop(minutes=refresh)
     async def cost(self):

@@ -23,7 +23,7 @@ from discord.ext import commands
 
 import botlib
 import bottomlib
-import secret_data
+import secretdata
 import settings
 import sqlbullshit
 import utils
@@ -31,15 +31,15 @@ import utils
 filepath = os.path.abspath(os.path.dirname(__file__))
 
 sql = sqlbullshit.sql(filepath + "/data.db", "user")
-openai.api_key = secret_data.openaikey
+openai.api_key = secretdata.openaikey
 
 starttime = time.time()
 
 
 reddit = praw.Reddit(
-    client_id=secret_data.reddit_client_id,
-    client_secret=secret_data.reddit_client_secret,
-    user_agent=secret_data.reddit_user_agent,
+    client_id=secretdata.reddit_client_id,
+    client_secret=secretdata.reddit_client_secret,
+    user_agent=secretdata.reddit_user_agent,
 )
 
 
