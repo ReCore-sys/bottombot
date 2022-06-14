@@ -6,7 +6,7 @@ import time
 from datetime import date, datetime, timedelta
 
 import discord
-import requests
+import faster_than_requests as requests
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 

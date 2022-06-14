@@ -1,3 +1,4 @@
+from operator import indexOf
 import os
 import random
 
@@ -150,6 +151,7 @@ def create(_data: list) -> Image:
             draw.point((23, x), fill=(255, 255, 255))
             draw.point((976, x), fill=(255, 255, 255))
             draw.point((974, x), fill=(255, 255, 255))
+            draw.line(((24, x), (975, x)), fill=(255, 255, 255, 25))
 
         # Draw the x axis
         draw.line(((25, 275), (975, 275)))
@@ -158,15 +160,18 @@ def create(_data: list) -> Image:
         for x in range(25, 975, round(x_spacing * 5)):
             draw.point((x, 274), fill=(255, 255, 255))
             draw.point((x, 276), fill=(255, 255, 255))
+            draw.line(((x, Y_max), (x, 275)), fill=(255, 255, 255, 25))
 
         # Set the default "last" point to the bottom left corner
-        last = (25, Y_max)
+
         # Loop through the points
         for i, x in enumerate(points):
-            # Draw a line from the last point drawn to the current point
-            # with the color determined by the color function
+            if indexOf(enumerate(points), (i, x)) == 0:
+                last = (25, 275 - (x * y_spacing))
+                # Draw a line from the last point drawn to the current point
+                # with the color determined by the color function
 
-            # Using some random thing I found on stackoverflow to make the lines smoother with anti aliasing
+                # Using some random thing I found on stackoverflow to make the lines smoother with anti aliasing
             graphutils.draw_line_antialiased(
                 draw,
                 _img,
@@ -182,6 +187,7 @@ def create(_data: list) -> Image:
             ((25, 275 - (avg * y_spacing)), (975, 275 - (avg * y_spacing))),
             fill=(255, 255, 255, 100),
         )
+
         # Write the max and min values on the left hand side
         draw.text(
             (0, 280),
@@ -197,7 +203,8 @@ def create(_data: list) -> Image:
         )
         text = f"""Min: ${round(y_min,2)}    Max: ${round(point_max, 2)}    Average: ${round(avg,2)}    Current price: ${_data[-1][1]}    Current loop: {times[-1]+1}"""
 
-        draw.text((50, 10), text, font=fontloader(16), fill=(255, 255, 255))
+        draw.text((50, 10), text, font=fontloader(
+            16), fill=(255, 255, 255))
         # Resize it with some anti-aliasing to help clean it up
         _img = _img.resize((1000, 300), resample=Image.ANTIALIAS)
     # Return the image
@@ -210,6 +217,6 @@ if __name__ == "__main__":
     for a in range(1000):
         cost = costlib.gencost(cost)
         data.append((a, cost))
-    # Note: Around 1500 points the x spacing drops to 0 when rounded at won't work
+    # Note: Around 1500 points the x spacing drops to 0 when rounded so won't work
     img = create(data[-288:])
     img.show()

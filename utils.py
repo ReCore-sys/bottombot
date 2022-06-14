@@ -103,3 +103,20 @@ def log(ctx):
     log = f"{timestring} | {guild} ({gid}) | {uname} ({uid}) | #{channel} | {cmd}\n"
     with open(f"{filepath}/logs/{time.strftime('%Y-%m-%d')}.log", "a+") as f:
         f.write(log)
+
+
+def match_regex(regex, text):
+    """match_regex
+    \nMatches a regex to the message
+
+    Parameters
+    ----------
+    regex : str
+        The regex to match
+
+    Returns
+    -------
+    bool
+        Whether the regex matched
+    """
+    return regex.match(text) is not None

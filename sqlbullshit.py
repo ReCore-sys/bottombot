@@ -66,7 +66,7 @@ class sql:
             else:
                 return True
 
-        def set(self, amount, usr: int, field: str):
+        def set(self, amount: int, usr: int, field: str):
             """set
             \nSets the value of a field
 
@@ -203,10 +203,9 @@ class sql:
                 None,
                 "REAL",
                 "FLOAT",
-                "STR",
             ]:
                 if datatype.upper() in self.conversions:
-                    datatype = self.conversions[datatype.upper()]
+                    datatype = self.conversions[datatype]
                 self.cursor.execute(f"ALTER TABLE {self.table} ADD {field} {datatype}")
                 self.db.commit()
             else:

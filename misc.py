@@ -4,6 +4,7 @@ import os
 import platform
 import random
 import time
+import re
 
 import asyncpraw as praw
 import cpuinfo
@@ -55,25 +56,24 @@ class Misc(commands.Cog):
                 last_line = lines[int(val) * -1]
                 print(f"Mention: {last_line} was called")
                 await ctx.send(last_line)
-                f.close()
-                f = open(f"{filepath}/logs.txt", "a")
-                f.write(
-                    f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {val} was called with the result '{last_line}'\n"
-                )
-                f.close()
+
+                with open(f"{filepath}/logs.txt", "a") as f:
+                    f.write(
+                        f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : !rewind was called: result {val} was called with the result '{last_line}'\n"
+                    )
+
         else:
             await ctx.send("I need a number stupid")
 
     @commands.Cog.listener()
     async def on_guild_leave(self, guild):
         os.system(f"rmdir settings/{guild.id}")
-        f = open(f"{filepath}/logs.txt", "a")
-        f.write(
-            f"{datetime.datetime.now()}: Left a server! {guild.name} : {guild.id}\n"
-        )
+        with open(f"{filepath}/logs.txt", "a") as f:
+            f.write(
+                f"{datetime.datetime.now()}: Left a server! {guild.name} : {guild.id}\n"
+            )
         print(f"Left a server! {guild.name} : {guild.id}")
         # this removes all the database stuff for when the bot leaves a server, whether it is kicked or the server is deleted.
-        f.close()
 
     @commands.command()
     async def invite(self, ctx):
@@ -93,7 +93,7 @@ class Misc(commands.Cog):
     @commands.command()
     async def servers(self, ctx):
         utils.log(ctx)
-        await ctx.send(len(commands.guilds) + " servers have been infected!")
+        await ctx.send(len(list(commands.Bot.guilds)) + " servers have been infected!")
 
     @commands.command()
     async def roll(self, ctx, arg1):
@@ -152,8 +152,7 @@ class Misc(commands.Cog):
         else:
             await ctx.send("You need to give me input")
 
-    @commands.command()
-    @commands.cooldown(5, 25, commands.BucketType.guild)
+    @commands.command(alias=["bottombot"])
     async def bb(self, ctx, *, args):
         utils.log(ctx)
         if settings.check(ctx.message.guild.id, "get", "bb"):
@@ -177,6 +176,7 @@ class Misc(commands.Cog):
                         sql.take(3, ctx.author.id, "money")
                         ctx.message.channel.typing()
                         with open(filepath + "/convfile.txt") as f:
+                            # Here to see what I changed? Nothing. But shhh.
                             response = openai.Completion.create(
                                 engine="curie",
                                 prompt=(f.read()).format(args),
@@ -191,25 +191,17 @@ class Misc(commands.Cog):
                         print(
                             f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n"
                         )
-                        f = open(f"{filepath}/logs.txt", "a")
-                        f.write(
-                            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n"
-                        )
-                        f.close()
+                        with open(f"{filepath}/logs.txt", "a") as f:
+                            f.write(
+                                f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bb: {args} -> {bot}\n"
+                            )
+
                         await ctx.reply(bot)
             else:
                 # there are a few people banned from using this command. These are their ids
                 await ctx.reply(botlib.nope())
         else:
             await ctx.send("Sorry, the chatbot is disabled for this server")
-
-    @bb.error
-    async def bb(self, ctx, error):
-        utils.log(ctx)
-        if isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(
-                f"AI is on a cooldown. Try again in {round(error.retry_after, 1)} seconds"
-            )
 
     @commands.command()
     async def ping(self, ctx):
@@ -233,7 +225,8 @@ class Misc(commands.Cog):
             description="If it works let me know. I'd be pretty suprised.",
             color=0x8800FF,
         )
-        embed.add_field(name="Creator", value="<@451643725475479552>", inline=True)
+        embed.add_field(
+            name="Creator", value="<@451643725475479552>", inline=True)
         embed.add_field(
             name="Reason", value="I was bored and want to make a bot", inline=False
         )
@@ -310,7 +303,7 @@ class Misc(commands.Cog):
             with open(filepath + "/json/configs.json", "r") as f:
                 servers = json.load(f)
                 for x in servers["updates"]:
-                    address = commands.get_channel(int(x))
+                    address = self.bot.get_channel(int(x))
                     await address.send("**ANNOUNCMENT**")
                     await address.send(args)
                     time.sleep(0.5)
@@ -319,7 +312,7 @@ class Misc(commands.Cog):
     async def duck(self, ctx):
         utils.log(ctx)
         await ctx.send(
-            "https://coorongcountry.com.au/wp-content/uploads/2016/01/Pacific-Black-Duck-53-cm.png"
+            "http://hd.wallpaperswide.com/thumbs/duck_3-t2.jpg"
         )
 
     @commands.command()
@@ -327,13 +320,12 @@ class Misc(commands.Cog):
         utils.log(ctx)
         global ttst
         output = bottomlib.bottomchoice()
-        await ctx.send(output, tts=ttst)
+        await ctx.send(output)
         print("Done: -bottomgear")
-        f = open(f"{filepath}/logs.txt", "a")
-        f.write(
-            f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bottomgear {output}\n"
-        )
-        f.close()
+        with open(f"{filepath}/logs.txt", "a") as f:
+            f.write(
+                f"{datetime.datetime.now()} - {ctx.message.guild.name} | {ctx.message.author} : -bottomgear {output}\n"
+            )
 
     @commands.command()
     async def help(self, ctx, menu=None):
@@ -362,7 +354,8 @@ class Misc(commands.Cog):
 
             await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(title=menu, description=result2[menu], color=0x1E00FF)
+            embed = discord.Embed(
+                title=menu, description=result2[menu], color=0x1E00FF)
             await ctx.send(embed=embed)
 
     @commands.command()
@@ -385,7 +378,8 @@ class Misc(commands.Cog):
             disk_total = utils.convert_bytes(partition_usage.total)
             disk_used = utils.convert_bytes(partition_usage.used)
             disk_percent = partition_usage.percent
-        embed = discord.Embed(title="Stats", description="System stats", color=0x1E00FF)
+        embed = discord.Embed(
+            title="Stats", description="System stats", color=0x1E00FF)
         embed.add_field(
             name="Uptime",
             value=f"{humanfriendly.format_timespan(uptime)}",
@@ -398,10 +392,13 @@ class Misc(commands.Cog):
         )
         if psutilinstalled:
             embed.add_field(name="CPU Usage", value=f"{cpuuse}%", inline=False)
-            embed.add_field(name="OS", value=f"{ostype} ({osversion})", inline=False)
+            embed.add_field(
+                name="OS", value=f"{ostype} ({osversion})", inline=False)
             embed.add_field(name="Memory", value=f"{mem}", inline=False)
-            embed.add_field(name="Used", value=f"{used} ({percent}%)", inline=False)
-            embed.add_field(name="Disk Total", value=f"{disk_total}", inline=False)
+            embed.add_field(
+                name="Used", value=f"{used} ({percent}%)", inline=False)
+            embed.add_field(name="Disk Total",
+                            value=f"{disk_total}", inline=False)
             embed.add_field(
                 name="Disk Used", value=f"{disk_used} ({disk_percent}%)", inline=False
             )
@@ -451,7 +448,8 @@ class Misc(commands.Cog):
         author = post.author.name
         title = post.title
         if post.media is not None:
-            media = post.media[list((post.media).keys())[0]]["scrubber_media_url"]
+            media = post.media[list((post.media).keys())[
+                0]]["scrubber_media_url"]
         else:
             media = post.url
         return author, media, post, title
@@ -477,6 +475,80 @@ class Misc(commands.Cog):
             )
             await ctx.send(media)
             self.redditstuff = await self.getmedia()
+
+    @commands.Cog.listener()
+    async def on_message(self, ctx):
+        # TODO: Add this to a json file somehow
+        kms = [
+            re.compile(r".*kill\s*myself.*", re.IGNORECASE),
+            re.compile(r".*end\s*myself.*", re.IGNORECASE),
+            re.compile(r".*end\s*my\s*life.*", re.IGNORECASE),
+            re.compile(r".*commit\s*die.*", re.IGNORECASE),
+            re.compile(r".*wish\s*i\s*was\s*dead.*", re.IGNORECASE),
+            re.compile(r".*want\s*to\s*die.*", re.IGNORECASE),
+            re.compile(r".*shoot\s*myself.*", re.IGNORECASE),
+            re.compile(r".*kys.*", re.IGNORECASE),
+            re.compile(r".*kms.*", re.IGNORECASE),
+            re.compile(r".*ima\s*kms.*", re.IGNORECASE),
+            re.compile(r".*just\s*kms.*", re.IGNORECASE),
+            re.compile(r".*commit\s*die.*", re.IGNORECASE)
+        ]
+
+        cont = ctx.clean_content
+        cont = cont.replace("wanna", "want to").replace("imma", "ima")
+        for x in kms:
+
+            if utils.match_regex(x, cont):
+                embed = discord.Embed(title="You are not alone",
+                                      description="Your life is important. We all care very deeply about you. I understand you don't feel like you matter right know, but I can tell you with 100% confidence that you do. I know you might be reluctant, but please just give the suicide prevention hotline just one more chance.",)
+                embed.set_thumbnail(
+                    url="https://www.edinburghhsc.scot/wp-content/uploads/2021/04/Suicide_website_icon.png")
+                embed.add_field(name="United States",
+                                value="Call (800) 2738255")
+                embed.add_field(name="Australia",
+                                value="Call 131114", inline=False)
+                embed.add_field(name="United Kingdom",
+                                value="Call 116123", inline=False)
+                embed.add_field(
+                    name="Canada", value="Call 18334564566 or text 45645", inline=False)
+                embed.add_field(
+                    name="India", value="Call 18005990019", inline=False)
+                embed.add_field(
+                    name="Japan", value="Call 810352869090", inline=False)
+                embed.add_field(
+                    name="Other countries", value="https://www.opencounseling.com/suicide-hotlines", inline=False)
+                embed.set_footer(
+                    text="I care about you. Please try to give the helplines just one chance. I know you can make it through this.")
+                embed.set_author(name="Inspired by Suicide prevention bot",
+                                 url="https://github.com/Bobrobot1/Suicide-Prevention-Bot/")
+                await ctx.channel.send(embed=embed)
+                break
+
+    @commands.command()
+    async def suicide(self, ctx):
+        embed = discord.Embed(title="You are not alone",
+                              description="Your life is important. We all care very deeply about you. I understand you don't feel like you matter right know, but I can tell you with 100% confidence that you do. I know you might be reluctant, but please just give the suicide prevention hotline just one more chance.",)
+        embed.set_thumbnail(
+            url="https://www.edinburghhsc.scot/wp-content/uploads/2021/04/Suicide_website_icon.png")
+        embed.add_field(name="United States",
+                        value="Call (800) 2738255")
+        embed.add_field(name="Australia",
+                        value="Call 131114", inline=False)
+        embed.add_field(name="United Kingdom",
+                        value="Call 116123", inline=False)
+        embed.add_field(
+            name="Canada", value="Call 18334564566 or text 45645", inline=False)
+        embed.add_field(
+            name="India", value="Call 18005990019", inline=False)
+        embed.add_field(
+            name="Japan", value="Call 810352869090", inline=False)
+        embed.add_field(
+            name="Other countries", value="https://www.opencounseling.com/suicide-hotlines", inline=False)
+        embed.set_footer(
+            text="I care about you. Please try to give the helplines just one chance. I know you can make it through this.")
+        embed.set_author(name="Inspired by Suicide prevention bot",
+                         url="https://github.com/Bobrobot1/Suicide-Prevention-Bot/")
+        await ctx.channel.send(embed=embed)
 
 
 def setup(bot):

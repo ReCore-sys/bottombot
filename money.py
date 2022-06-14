@@ -23,7 +23,6 @@ import graph
 import imageyoink
 import secret_data
 import settings
-import shop
 import sqlbullshit
 import utils
 
@@ -153,7 +152,7 @@ class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cost.start()
-        # self.IRS.start()
+        self.IRS.start()
 
     @commands.check(doesexist)
     @commands.command(aliases=["acc", "balance", "bal", "a"])
@@ -428,7 +427,8 @@ class money(commands.Cog):
                 try:
                     timeto = countdown - datetime.now()
                 except NameError:
-                    pass
+                    await ctx.send("OOPS! Something went wrong. Try again later")
+                    return
                 if action == null:
                     comment = botlib.stockcomment(ctx, cost)
                     if comment[0] == "url":
@@ -474,7 +474,8 @@ class money(commands.Cog):
                                 < ranks[sql.get(ctx.author.id, "rank")]["cap"]
                             ):
                                 c += 1
-                            count = c - 1
+                            count = math.floor((ranks[sql.get(
+                                ctx.author.id, "rank")]["cap"] - sql.get(ctx.author.id, "money")) / cost)
                             fcost = cost * count
 
                             sql.add(taxrate(ctx, fcost), user, "money")
@@ -649,7 +650,7 @@ class money(commands.Cog):
                 f = open(filepath + "/static/banners/" +
                          str(ctx.author.id), "wb")
                 f.write(data)
-                f.close()
+
                 await ctx.send("Banner image was updated!")
                 sql.take(1000, ctx.author.id, "money")
             else:
@@ -713,6 +714,8 @@ class money(commands.Cog):
                                 "time": time.time(),
                             }
                             sql.add(val, ctx.author.id, "money")
+                            sql.take(round(val/400),
+                                     ctx.author.id, "creditscore")
                             await ctx.send(
                                 f"You took out a loan of {notation(val)}. You have 2 days to pay it off, plus a {loanrate}% fee."
                             )
@@ -728,7 +731,7 @@ class money(commands.Cog):
                     await ctx.send("You don't have any loans dumbass")
                     return
                 if inp2 is None:
-                    if bal < unpaid and bal < owed:
+                    if (bal < unpaid and bal < owed) or (bal < int(inp2)):
                         await ctx.send(
                             f"Sorry, you don't have enough to pay off the loan. You need another {notation(owed - bal)}"
                         )
@@ -759,12 +762,16 @@ class money(commands.Cog):
                                     r[str(ctx.author.id)
                                       ]["amount"] = unpaid - amount
                                     sql.take(amount, ctx.author.id, "money")
+                                    sql.add(round(amount/300),
+                                            ctx.author.id, "loans")
                                     await ctx.send(
                                         f"Well done, you just paid off {notation(amount)} of your loan!"
                                     )
                                 else:
                                     r.pop(str(ctx.author.id))
                                     sql.take(unpaid, ctx.author.id, "money")
+                                    sql.add(round(unpaid/300),
+                                            ctx.author.id, "loans")
                                     await ctx.send(
                                         "You just paid off your loan! Well done!"
                                     )
@@ -772,12 +779,16 @@ class money(commands.Cog):
                                 if amount < owed:
                                     sql.take(amount, ctx.author.id, "loans")
                                     sql.take(amount, ctx.author.id, "money")
+                                    sql.add(round(amount/300),
+                                            ctx.author.id, "loans")
                                     await ctx.send(
                                         f"Well done, you just paid off {notation(amount)} of your debt!"
                                     )
                                 else:
                                     sql.set(0, ctx.author.id, "loans")
                                     sql.take(owed, ctx.author.id, "money")
+                                    sql.add(round(owed/300),
+                                            ctx.author.id, "loans")
                                     await ctx.send(
                                         "Well done, you just paid off of your debt!"
                                     )
@@ -851,11 +862,12 @@ class money(commands.Cog):
                             await user.send(
                                 f"A user with the id {x} has caused problems by not existing. pls fix"
                             )
-            for x in droppers:
-                f.pop(x)
-            droppers = list()
-            with open(filepath + "/taxes.json", "w") as fw:
-                json.dump(f, fw)
+            if droppers != []:
+                for x in droppers:
+                    f.pop(x)
+                droppers = list()
+                with open(filepath + "/taxes.json", "w") as fw:
+                    json.dump(f, fw)
 
     @tasks.loop(minutes=refresh)
     async def cost(self):
@@ -871,7 +883,7 @@ class money(commands.Cog):
         cost = costlib.gencost(cost)
         prices.append((cycle, cost))
         img = None
-        while len(prices) > (60 * 24 * 2) / refresh:
+        while len(prices) > (60 * 24 * 4) / refresh:
             prices.pop(0)
         with open(f"{filepath}/json/prices.json", "w") as f:
             json.dump(prices, f, sort_keys=True, indent=4)

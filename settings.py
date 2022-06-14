@@ -36,7 +36,7 @@ def check(serverid, action="get", setting=None, val=None):
             f = open(filepath + "/settings/" +
                      str(serverid) + ".json", "w")
             f.write(json.dumps(settings))
-            f.close()
+
             return True
         elif action == "set":
             if setting is None:
@@ -49,5 +49,5 @@ def check(serverid, action="get", setting=None, val=None):
                 f = open(filepath + "/settings/" +
                          str(serverid) + ".json", "w")
                 f.write(json.dumps(settings))
-                f.close()
+
                 return True

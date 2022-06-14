@@ -1,11 +1,16 @@
 import os
 import platform
+import re
 import shutil
 import subprocess
 import time
 import zipfile
 from datetime import datetime
 from threading import Thread
+
+import discord
+import ujson as json
+from discord.ext import commands
 
 import sqlbullshit
 
@@ -16,10 +21,17 @@ day = 60 * 60 * 24
 
 std = ""
 
+botobj = None
+
+
+def setbot(bot):
+    global botobj
+    botobj = bot
+
 
 def in_wsl() -> bool:
     if os.name == "nt":
-        return False
+        return True
     else:
         return "microsoft-standard" in platform.uname().release
 
@@ -34,8 +46,9 @@ def updatedb(added: str):
 def compresslogs():
     """Find all logs in the /commandlogs directory more than 3 days old and use subprocess.run(["zpaq", "add", f"./{t}.zpaq", f"./{t}.zip"],
     stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) on it"""
-    while True:
-        if in_wsl() is False:
+
+    if in_wsl() is False:
+        while True:
             dt = datetime.now()
             t = dt.strftime("%d-%b-%y_%H-%M-%S")
             # Get a list of all the logs in the /commandlogs directory
@@ -60,7 +73,7 @@ def compresslogs():
                     shutil.move(
                         f"{filepath}/{t}.zpaq", fr"/{filepath}/commandlogs/{t}.zpaq"
                     )
-        time.sleep(day / 2)
+            time.sleep(day / 2)
 
 
 def backup():
@@ -99,8 +112,14 @@ def backup():
     print("Backup loop not run on the non-linux system")
 
 
-def begin():
-    return
+def isin(regobject: re.Pattern, string: str) -> bool:
+    """Check if a string is in a regex object"""
+    if len(regobject.findall(string)) > 0:
+        return True
+    return False
+
+
+async def begin():
     threads = [
         Thread(target=backup, name="Database backup"),
         Thread(target=compresslogs, name="Log compression"),

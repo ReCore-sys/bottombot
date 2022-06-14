@@ -14,14 +14,16 @@ def gencost(cost):
     jumpup = botlib.configs("stocks", "jumpup")
     jumpdown = botlib.configs("stocks", "jumpdown")
     if rand > cost:
-        cost = cost + random.uniform(lower, upper)
+        cost += random.uniform(lower, upper)
     else:
-        cost = cost - random.uniform(lower, upper)
+        cost -= random.uniform(lower, upper)
     cost = round(cost, 2)
     randomchance = random.uniform(0, 1)
     if randomchance < jumpup:
+        print("Jumped up")
         cost += 50
     elif randomchance < jumpdown:
+        print("Jumped down")
         if (cost - 50) < 10:
             cost = 10
         else:

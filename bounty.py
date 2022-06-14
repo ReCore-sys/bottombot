@@ -25,12 +25,12 @@ class bounty(commands.Cog):
         description=None,
     ):
         utils.log(ctx)
-        f = open(f"{filepath}/config/bounties.json", "r")
-        v = json.loads(f.read())
-        f.close()
-        f = open(f"{filepath}/config/bountytakers.json", "r")
-        j = json.loads(f.read())
-        f.close()
+        with open(f"{filepath}/config/bounties.json", "r") as f:
+            v = json.loads(f.read())
+
+        with open(f"{filepath}/config/bountytakers.json", "r") as f:
+            j = json.loads(f.read())
+
         num = 0
         num = 0
         if action is None:
@@ -45,27 +45,28 @@ class bounty(commands.Cog):
             await ctx.send(embed=embed)
         elif action == "add":
             if ctx.message.author.id == 451643725475479552:
-                v[name.replace('"', "")] = list([int(price), catagory, description])
-                f = open(f"{filepath}/config/bounties.json", "w")
-                f.write(json.dumps(v))
-                f.close()
+                v[name.replace('"', "")] = list(
+                    [int(price), catagory, description])
+                with open(f"{filepath}/config/bounties.json", "w") as f:
+                    f.write(json.dumps(v))
+
                 await ctx.send("Done")
                 j[name] = []
-                f = open(f"{filepath}/config/bountytakers.json", "w")
-                f.write(json.dumps(j))
-                f.close()
+                with open(f"{filepath}/config/bountytakers.json", "w") as f:
+                    f.write(json.dumps(j))
+
                 channel = self.bot.get_channel(824960645279645718)
                 await channel.send(f"New bounty added: {name} for ${v[name][0]}")
         elif action == "remove":
             if ctx.message.author.id == 451643725475479552:
                 v.pop(name)
-                f = open(f"{filepath}/config/bounties.json", "w")
-                f.write(json.dumps(v))
-                f.close()
+                with open(f"{filepath}/config/bounties.json", "w") as f:
+                    f.write(json.dumps(v))
+
                 j.pop(name)
-                f = open(f"{filepath}/config/bountytakers.json", "w")
-                f.write(json.dumps(j))
-                f.close()
+                with open(f"{filepath}/config/bountytakers.json", "w") as f:
+                    f.write(json.dumps(j))
+
                 await ctx.send("Done")
                 channel = self.bot.get_channel(824960645279645718)
                 await channel.send(f"Bounty removed or completed: {name}")
@@ -79,9 +80,9 @@ class bounty(commands.Cog):
                     await ctx.send("You are already took this bounty")
                 else:
                     j[name].append(int(ctx.message.author.id))
-                    f = open(f"{filepath}/config/bountytakers.json", "w")
-                    f.write(json.dumps(j))
-                    f.close()
+                    with open(f"{filepath}/config/bountytakers.json", "w") as f:
+                        f.write(json.dumps(j))
+
                     channel = self.bot.get_channel(824960645279645718)
                     await channel.send(
                         f"{ctx.message.author} just took the {name} bounty for ${v[name][0]}"
@@ -92,9 +93,12 @@ class bounty(commands.Cog):
             embed = discord.Embed(
                 title=action, description=f"${v[action][0]}", color=0x1E00FF
             )
-            embed.add_field(name="Category", value=f"{v[action][1]}", inline=False)
-            embed.add_field(name="Description", value=f"{v[action][2]}", inline=False)
-            embed.add_field(name="Takers", value=f"{len(j[action])}", inline=False)
+            embed.add_field(name="Category",
+                            value=f"{v[action][1]}", inline=False)
+            embed.add_field(name="Description",
+                            value=f"{v[action][2]}", inline=False)
+            embed.add_field(
+                name="Takers", value=f"{len(j[action])}", inline=False)
             await ctx.send(embed=embed)
 
 
