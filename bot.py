@@ -17,7 +17,7 @@ import utils
 filepath = os.path.dirname(os.path.realpath(__file__))
 
 print("\u001b[32;1m")
-with open(f"{filepath}/banner.txt", "r") as f:
+with open(f"{filepath}/banner.txt", "r", encoding="utf8") as f:
     print(f.read())
 print("\u001b[0m")
 
@@ -29,7 +29,7 @@ def in_wsl() -> bool:
         return "microsoft-standard" in platform.uname().release
 
 
-isbeta = in_wsl()
+isbeta = os.name == "nt"
 
 # this gets the directory this script is in. Makes it much easier to transfer between systems.
 filepath = os.path.abspath(os.path.dirname(__file__))
@@ -76,7 +76,8 @@ async def on_ready():
             ]
         )
         await client.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.watching, name=status)
+            activity=discord.Activity(
+                type=discord.ActivityType.watching, name=status)
         )
 
     setup.begin()
@@ -84,7 +85,8 @@ async def on_ready():
     f = open(f"{filepath}/logs.txt", "a")
     f.write(f"\n---\n{datetime.datetime.now()} Bot started\n---\n")
     f.close()
-    modules = ["money", "cross", "modules", "bounty", "admin", "misc", "shop"]
+    modules = ["money", "cross", "modules",
+               "bounty", "admin", "misc", "shop", "private"]
     for x in modules:
         client.load_extension(x)
     # We sleep here so wavelink has time to get set up
@@ -182,7 +184,8 @@ async def on_message(message):
                 os.system(f"mkdir serversettings/{message.guild.id}")
                 # this makes the relevant folders for any servers that don't already have a serversettings entry.
             if "replay.txt" not in os.listdir(f"serversettings/{message.guild.id}"):
-                os.system(f"touch serversettings/{message.guild.id}/replay.txt")
+                os.system(
+                    f"touch serversettings/{message.guild.id}/replay.txt")
             if message.author != client.user:
                 pingC = (message.content).encode("utf-8", "ignore")
                 pingC = pingC.decode("utf-8", "ignore")

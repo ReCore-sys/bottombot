@@ -34,6 +34,8 @@ class private(commands.Cog):
             else:
                 times[ctx.author.id] = ctime + 5
                 times
+        if ctx.author.id == 567522840752947210:
+            await ctx.add_reaction("♻️")
 
 
 def setup(bot):

@@ -153,7 +153,7 @@ class money(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cost.start()
-        self.IRS.start()
+        # self.IRS.start()
 
     @commands.check(doesexist)
     @commands.command(aliases=["acc", "balance", "bal", "a"])
@@ -189,9 +189,11 @@ class money(commands.Cog):
                     return
             # Load the path to the user's image, even if it does not exist
             if str(tid) in os.listdir(filepath + "/static/banners"):
-                banner = Image.open(f"{filepath}/static/banners/{tid}").convert("RGBA")
+                banner = Image.open(
+                    f"{filepath}/static/banners/{tid}").convert("RGBA")
             else:
-                banner = Image.open(f"{filepath}/static/banner.png").convert("RGBA")
+                banner = Image.open(
+                    f"{filepath}/static/banner.png").convert("RGBA")
             imagepath = f"{filepath}/static/userimgs/{tuser.id}"
 
             # If we don't have the user's image, get it
@@ -255,17 +257,21 @@ class money(commands.Cog):
             # Paste it onto the banner
             banner.paste(rect, mask=rect)
             # Write the user's bal on there
-            d.text((282, 75), f"Balance: {notation(bal)}", fill="black", font=font)
+            d.text(
+                (282, 75), f"Balance: {notation(bal)}", fill="black", font=font)
             # MMMMM STONKS
-            d.text((283, 119), f"Owned stocks: {stocks}", fill="black", font=font)
+            d.text(
+                (283, 119), f"Owned stocks: {stocks}", fill="black", font=font)
             # Take a guess what this line does
             d.text((282, 163), f"Rank: {rank}", fill="black", font=font)
             # Add the user's wallet cap
-            d.text((285, 208), f"Wallet cap: {notation(cap)}", fill="black", font=font)
+            d.text(
+                (285, 208), f"Wallet cap: {notation(cap)}", fill="black", font=font)
             # Write the user's name in dummy thicc font
             d.text((285, 20), tname, fill="black", font=thiccfont)
             # Underline the user's name with some fucky maths
-            d.line(((285, 70), ((285 + namelen), 70)), fill=(26, 26, 26), width=5)
+            d.line(((285, 70), ((285 + namelen), 70)),
+                   fill=(26, 26, 26), width=5)
             # Waaaa, uploads need to be files whaaaaaa!
             # Suck my fat juicy cock Discord
             with BytesIO() as img_bin:
@@ -516,7 +522,8 @@ class money(commands.Cog):
                             value=f"${ranks[namestorank[x]]['price']}",
                             inline=True,
                         )
-                embed.set_footer(text='Use "-rank buy [rank name]" to buy a rank')
+                embed.set_footer(
+                    text='Use "-rank buy [rank name]" to buy a rank')
                 await ctx.send(embed=embed)
             else:  # if they do have it, start doing stuff
                 crank = sql.get(int(user), "rank")
@@ -633,12 +640,14 @@ class money(commands.Cog):
         if bal >= 1000:
             url = imageyoink.sorter(args)
             if url is not False:
-                size = int(requests.get(url, stream=True).headers["Content-length"])
+                size = int(requests.get(
+                    url, stream=True).headers["Content-length"])
                 if size > 50000000:
                     await ctx.send("That image is too big")
                     return
                 data = requests.get(url).content
-                f = open(filepath + "/static/banners/" + str(ctx.author.id), "wb")
+                f = open(filepath + "/static/banners/" +
+                         str(ctx.author.id), "wb")
                 f.write(data)
                 f.close()
                 await ctx.send("Banner image was updated!")
@@ -747,7 +756,8 @@ class money(commands.Cog):
                         else:
                             if unpaid > 0:
                                 if amount < unpaid:
-                                    r[str(ctx.author.id)]["amount"] = unpaid - amount
+                                    r[str(ctx.author.id)
+                                      ]["amount"] = unpaid - amount
                                     sql.take(amount, ctx.author.id, "money")
                                     await ctx.send(
                                         f"Well done, you just paid off {notation(amount)} of your loan!"
@@ -781,7 +791,8 @@ class money(commands.Cog):
                     if unpaid > 0:
                         timeremaining = time.strftime(
                             "%H:%M:%S",
-                            time.gmtime(r[str(ctx.author.id)]["time"] - time.time()),
+                            time.gmtime(r[str(ctx.author.id)]
+                                        ["time"] - time.time()),
                         )
                         embed = discord.Embed(
                             title=f"{ctx.author.name}'s Loans",
@@ -799,7 +810,8 @@ class money(commands.Cog):
                             color=discord.Color.blue(),
                         )
                     embed.add_field(name="Credit score", value=cs)
-                    embed.set_footer(text=f"You have {notation(round(bal, 2))}")
+                    embed.set_footer(
+                        text=f"You have {notation(round(bal, 2))}")
                     await ctx.send(embed=embed)
 
             with open(f"{filepath}/json/taxes.json", "w") as j:

@@ -93,12 +93,14 @@ def backup():
                     )
                 # If it doesn't work, keep the zip file
                 except OSError:
-                    shutil.move(f"{filepath}/{t}.zip", fr"/{filepath}/backups/{t}.zip")
+                    shutil.move(f"{filepath}/{t}.zip",
+                                fr"/{filepath}/backups/{t}.zip")
             time.sleep(day)
     print("Backup loop not run on the non-linux system")
 
 
 def begin():
+    return
     threads = [
         Thread(target=backup, name="Database backup"),
         Thread(target=compresslogs, name="Log compression"),
